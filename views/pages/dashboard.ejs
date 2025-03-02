@@ -20,7 +20,6 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="/trip_add">Add Trip</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/trips/saved">Saved Trips</a></li>
                     
                     <% if (!user) { %> 
                         <!-- If user is NOT logged in, show Sign Up and Login -->
@@ -37,15 +36,13 @@
     </nav>
 
     <!-- Main Content Container -->
-</div class="col-md-8">
-Dashboard
-<div>
+
     <div class="container mt-4">
         <div class="row">
             <!-- Welcome Card -->
             <div class="col-md-4">
                 <div class="card welcome-card">
-                    <img src="/images/welcome.jpg" class="card-img-top" alt="Welcome Image">
+                    <!-- <img src="/images/welcome.jpg" class="card-img-top" alt="Welcome Image"> -->
                     <div class="card-body">
                         <h5 class="card-title">Welcome, <%= user.username %></h5>
                         <p class="card-text">Plan your next adventure with Kosmos.</p>
@@ -102,7 +99,7 @@ Dashboard
             <div class="row mt-4">
                 <div class="col-md-4">
                     <div class="card next-trip-card">
-                        <img src="/images/next_trip.jpg" class="card-img-top" alt="Next Trip">
+                        <!-- <img class="card-img-top" alt="Next Trip"> -->
                         <div class="card-body">
                             <h5 class="card-title">Next Trip</h5>
                             <h3 class="card-title"><%= nextTrip.trip_name %></h3>

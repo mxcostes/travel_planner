@@ -97,7 +97,7 @@ router.post('/:trip_id/edit', (req, res) => {
             return res.status(500).send("❌ Failed to update trip.");
         }
         console.log("✅ Trip updated successfully");
-        res.redirect(`/trips/${trip_id}/itinerary`);
+        res.redirect(`/trips/${trip_id}/`);
     });
 });
 

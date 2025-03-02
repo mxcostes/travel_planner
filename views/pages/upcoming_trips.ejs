@@ -45,7 +45,7 @@
                 <% trips.forEach(trip => { %>
                     <div class="col-md-4 mb-4">
                         <div class="card trip-card h-100">
-                           <!-- <img src="https://maps.googleapis.com/maps/api/staticmap?center=<%= encodeURIComponent(trip.start_location) %>&zoom=10&size=400x250&maptype=roadmap&key=<%= apiKey %>" -->
+                           <img src="https://maps.googleapis.com/maps/api/staticmap?center=<%= encodeURIComponent(trip.start_location) %>&zoom=10&size=400x250&maptype=roadmap&key=<%= apiKey %>" 
                                 class="card-img-top" alt="Trip Image" onerror="this.src='/images/map_error.png'">
                             <div class="card-body">
                                 <h5 class="card-title"><%= trip.trip_name %></h5>
