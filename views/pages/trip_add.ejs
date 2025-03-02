@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Trip - Kosmos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css"> <!-- Link to custom styles -->
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">KOSMOS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/trip_add">Add Trip</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/trips/saved">Saved Trips</a></li>
+                    
+                    <% if (!user) { %> 
+                        <!-- If user is NOT logged in, show Sign Up and Login -->
+                        <li class="nav-item"><a class="nav-link" href="/auth/signup">Sign Up</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/auth/login">Login</a></li>
+                    <% } else { %>
+                        <!-- If user IS logged in, show their name and Logout -->
+                        <li class="nav-item"><a class="nav-link disabled">Hello, <%= user.username %></a></li>
+                        <li class="nav-item"><a class="nav-link" href="/auth/logout">Logout</a></li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-5">
+        <div class="d-flex justify-content-center">
+            <div class="card trip-form-card">
+                <div class="card-body">
+                    <h2 class="text-center mb-4">Create Trip</h2>
+
+                    <form action="/trips/create" method="POST">
+                        <!-- Trip Name -->
+                        <div class="mb-3">
+                            <label for="trip_name" class="form-label">Trip Name</label>
+                            <input type="text" class="form-control" id="trip_name" name="trip_name" placeholder="Enter trip name" required>
+                        </div>
+
+                        <!-- Start and End Dates -->
+                        <div class="mb-3 row">
+                            <div class="col">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" required>
+                            </div>
+                            <div class="col">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" required>
+                            </div>
+                        </div>
+
+                        <!-- Starting Location -->
+                        <div class="mb-3">
+                            <label for="startLocation" class="form-label">Start Location</label>
+                            <input type="text" class="form-control" id="startLocation" name="start_location" placeholder="Enter start location" required>
+                        </div>
+
+                        <!-- Ending Location -->
+                        <div class="mb-3">
+                            <label for="endLocation" class="form-label">End Location</label>
+                            <input type="text" class="form-control" id="endLocation" name="end_location" placeholder="Enter end location" required>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Create Trip</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Google Places API -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=<%= apiKey %>&libraries=places"></script>
+
+    <script>
+        function initAutocomplete() {
+            if (!google || !google.maps || !google.maps.places) {
+                console.error("Google Places API not loaded.");
+                return;
+            }
+
+            const startLocation = document.getElementById("startLocation");
+            const endLocation = document.getElementById("endLocation");
+
+            if (startLocation && endLocation) {
+                new google.maps.places.Autocomplete(startLocation);
+                new google.maps.places.Autocomplete(endLocation);
+            } else {
+                console.error("Input fields not found.");
+            }
+        }
+
+        // Ensure script is fully loaded before calling initAutocomplete
+        window.onload = function () {
+            if (typeof google === "undefined") {
+                console.error("Google API not loaded.");
+            } else {
+                initAutocomplete();
+            }
+        };
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

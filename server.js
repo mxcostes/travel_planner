@@ -1,0 +1,169 @@
+require('dotenv').config(); // Load environment variables
+const express = require('express');
+const path = require('path');
+const methodOverride = require('method-override');
+const bodyParser = require('body-parser');
+const session = require('express-session');
+const db = require('./config/db'); // Import MySQL connection
+
+const tripsRoutes = require('./routes/trips'); // Routes for trips
+const usersRoutes = require('./routes/users'); // Routes for users
+const authRoutes = require('./routes/auth');
+
+const app = express();
+const PORT = process.env.PORT || 3307;
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(methodOverride('_method')); // Allows PUT & DELETE in forms
+
+
+
+// Set up session (for authentication)
+app.use(session({
+    secret: 'your_secret_key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Change to `true` in production with HTTPS
+}));
+
+// Middleware to make GOOGLE_API_KEY available in all views
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+
+// User Info Middleware
+// ✅ Middleware to make user available globally in all EJS views
+app.use((req, res, next) => {
+    res.locals.user = req.session.user || { username: "Guest" };
+    next();
+});
+
+// Set static folder (for CSS, JS, Images)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Set EJS as the templating engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Routes
+app.use('/trips', tripsRoutes);
+app.use('/users', usersRoutes);
+app.use('/auth', authRoutes);
+
+// Homepage Route
+app.get('/', (req, res) => {
+    if (!req.session.user || !req.session.user.id) {
+        return res.redirect('/auth/login'); // Ensure the user is logged in
+    }
+
+    const userId = req.session.user.id;
+    const today = new Date().toISOString().split('T')[0]; // 🔥 Ensures YYYY-MM-DD format
+
+    const tripsSql = `
+        SELECT *,
+        DATE_FORMAT(start_date, '%Y-%m-%d') AS formatted_start_date,
+        DATE_FORMAT(end_date, '%Y-%m-%d') AS formatted_end_date
+        FROM trips 
+        WHERE user_id = ?
+        ORDER BY start_date ASC
+    `;
+
+    db.query(tripsSql, [userId], (err, trips) => {
+        if (err) {
+            console.error("❌ Failed to fetch trips:", err);
+            return res.status(500).send("Database error fetching trips.");
+        }
+
+        const pastTrips = [];
+        const upcomingTrips = [];
+        const unscheduledTrips = [];
+        let nextTrip = null;
+
+        trips.forEach(trip => {
+            const startDate = trip.formatted_start_date;
+            const endDate = trip.formatted_end_date;
+            const tripId = trip.trip_id;
+            const tripName = trip.trip_name;
+
+            if (!startDate || !endDate) {
+                unscheduledTrips.push(trip);
+            } else if (endDate < today) {
+                pastTrips.push(trip);
+            } else {
+                upcomingTrips.push(trip);
+                if (!nextTrip) nextTrip = trip; // Assign first upcoming trip
+            }
+        });
+
+        res.render('pages/dashboard', { 
+            user: req.session.user,
+            trips: { pastTrips, upcomingTrips, unscheduledTrips },
+            nextTrip
+        });
+    });
+});
+
+// Dashboard Route
+app.get('/dashboard', (req, res) => {
+    if (!req.session.user || !req.session.user.id) {
+        return res.redirect('/auth/login'); // Ensure the user is logged in
+    }
+
+    const userId = req.session.user.id;
+    const today = new Date().toISOString().split('T')[0]; // 🔥 Ensures YYYY-MM-DD format
+
+    const tripsSql = `
+        SELECT *,
+        DATE_FORMAT(start_date, '%Y-%m-%d') AS formatted_start_date,
+        DATE_FORMAT(end_date, '%Y-%m-%d') AS formatted_end_date
+        FROM trips 
+        WHERE user_id = ?
+        ORDER BY start_date ASC
+    `;
+
+    db.query(tripsSql, [userId], (err, trips) => {
+        if (err) {
+            console.error("❌ Failed to fetch trips:", err);
+            return res.status(500).send("Database error fetching trips.");
+        }
+
+        const pastTrips = [];
+        const upcomingTrips = [];
+        const unscheduledTrips = [];
+        let nextTrip = null;
+
+        trips.forEach(trip => {
+            const startDate = trip.formatted_start_date;
+            const endDate = trip.formatted_end_date;
+
+            if (!startDate || !endDate) {
+                unscheduledTrips.push(trip);
+            } else if (endDate < today) {
+                pastTrips.push(trip);
+            } else {
+                upcomingTrips.push(trip);
+                if (!nextTrip) nextTrip = trip; // Assign first upcoming trip
+            }
+        });
+
+        res.render('pages/dashboard', { 
+            user: req.session.user,
+            trips: { pastTrips, upcomingTrips, unscheduledTrips },
+            nextTrip
+        });
+    });
+});
+
+//create trip route
+app.get('/trip_add', (req, res) => {
+    res.render('pages/trip_add', { 
+        user: req.session.user || { username: "Guest" } ,
+        apiKey: process.env.GOOGLE_API_KEY  // Pass API key to EJS
+    });
+});
+
+// Start the Server
+app.listen(PORT, () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+});
+

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kosmos Travel Planner</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css"> <!-- Link to custom styles -->
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">KOSMOS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/trip_add">Add Trip</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/trips/saved">Saved Trips</a></li>
+                    
+                    <% if (!user) { %> 
+                        <!-- If user is NOT logged in, show Sign Up and Login -->
+                        <li class="nav-item"><a class="nav-link" href="/auth/signup">Sign Up</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/auth/login">Login</a></li>
+                    <% } else { %>
+                        <!-- If user IS logged in, show their name and Logout -->
+                        <li class="nav-item"><a class="nav-link disabled">Hello, <%= user.username %></a></li>
+                        <li class="nav-item"><a class="nav-link" href="/auth/logout">Logout</a></li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+</div class="col-md-8">
+Index
+<div>
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Welcome Card -->
+            <div class="col-md-4">
+                <div class="card welcome-card">
+                    <img src="/images/welcome.jpg" class="card-img-top" alt="Welcome Image">
+                    <div class="card-body">
+                        <h5 class="card-title">Welcome, <%= user.username %></h5>
+                        <p class="card-text">Plan your next adventure with Kosmos.</p>
+                        <a href="/trip_add" class="btn btn-primary">Add Trip</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trip Summary Cards -->
+            <div class="col-md-8">
+                <div class="row">
+                    <% let tripCategories = ["Past Trips", "Upcoming Trips", "Unscheduled Trips"]; %>
+                    <% let tripRoutes = ["/trips/past", "/trips/upcoming", "/trips/unscheduled"]; %>
+                    <% let tripData = [trips.pastTrips, trips.upcomingTrips, trips.unscheduledTrips]; %>
+            
+                    <% for(let i = 0; i < tripCategories.length; i++) { %>
+                        <div class="col-md-4">
+                            <div class="card trip-card">
+                                <div class="card-body">
+                                    <h5 class="card-title"><%= tripCategories[i] %></h5>
+                                    <p class="card-text">Manage and review your trips.</p>
+                                    <a href="<%= tripRoutes[i] %>" class="text-light">View Trips</a>
+                                    <h2><%= tripData[i].length %> trips</h2>
+                                </div>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+        <!-- Additional Features Row -->
+        <div class="row mt-4">
+            <% let featureCards = [
+                { title: "Travel Spending", description: "See totals from trips taken.", link: "/budget", linkText: "Review Budgets" },
+                { title: "Stored Bookings", description: "Manage stored files with booking references.", link: "/bookings", linkText: "View Files" },
+                { title: "Search Itineraries", description: "Look for inspiration from fellow travelers.", link: "/itineraries", linkText: "View Itineraries" }
+            ]; %>
+
+            <% featureCards.forEach(feature => { %>
+                <div class="col-md-4">
+                    <div class="card feature-card">
+                        <div class="card-body">
+                            <h5 class="card-title"><%= feature.title %></h5>
+                            <p class="card-text"><%= feature.description %></p>
+                            <a href="<%= feature.link %>" class="text-light"><%= feature.linkText %></a>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+        <!-- Next Trip Card -->
+        <% if (nextTrip) { %>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card next-trip-card">
+                        <img src="/images/next_trip.jpg" class="card-img-top" alt="Next Trip">
+                        <div class="card-body">
+                            <h5 class="card-title">Next Trip</h5>
+                            <p class="card-text"><%= nextTrip.destination %><br>
+                            <%= nextTrip.start_date %> - <%= nextTrip.end_date %><br>
+                            <%= nextTrip.days_until %> Days Away</p>
+                            <a href="/trips/view/<%= nextTrip.id %>" class="btn btn-primary">Go To Trip</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.navbar {
+    padding: 10px;
+}
+
+.user-icon {
+    padding-right: 15px;
+}
+
+.card {
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.welcome-card img, .next-trip-card img {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.trip-card {
+    background-color: #0d3b66;
+    color: white;
+    text-align: center;
+    padding: 10px;
+}
+
+.feature-card {
+    background-color: #142850;
+    color: white;
+    text-align: center;
+}
+
+.next-trip-card {
+    background-color: #f8f9fa;
+}
+
+.trip-card a, .feature-card a {
+    color: #ffcc00;
+    text-decoration: none;
+}
+
+.trip-card a:hover, .feature-card a:hover {
+    text-decoration: underline;
+}
+
+
+
+.trip-form-card {
+    width: 500px;
+    background-color: #5090ff;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.trip-overview {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+.trip-tile {
+    background-color: #e9ecef;
+    padding: 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+}
+
+.trip-tile:hover {
+    background-color: #d6d8db;
+    transform: scale(1.05);
+    transition: 0.3s;
+}
+
+.trip-tile i {
+    font-size: 2rem;
+    display: block;
+    margin-top: 10px;
+}
+
+.pagination-container {
+    max-width: 90%;  /* Prevent it from stretching too wide */
+    overflow-x: auto; /* Enable horizontal scrolling */
+    white-space: nowrap; /* Prevent wrapping */
+    padding-bottom: 5px; /* Add slight spacing for better UX */
+}
+
+.pagination {
+    display: flex;
+    flex-wrap: nowrap; /* Ensure buttons stay in one line */
+    overflow-x: auto; /* Allow scrolling */
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #ccc transparent; /* Customize scrollbar */
+}
+
+.pagination::-webkit-scrollbar {
+    height: 6px; /* Small scrollbar height */
+}
+
+.pagination::-webkit-scrollbar-thumb {
+    background-color: #ccc; /* Light grey scrollbar */
+    border-radius: 4px;
+}
+
+.pagination::-webkit-scrollbar-track {
+    background: transparent;
+}
