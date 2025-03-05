@@ -255,6 +255,10 @@ router.get('/:trip_id/packing_list', (req, res) => {
             const totalItems = items.length;
             const packedItems = items.filter(item => item.packed).length;
             const progress = totalItems ? (packedItems / totalItems) * 100 : 0;
+            // 🎯 Format trip start & end dates
+        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+        trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
+        trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
 
             res.render('pages/packing_list', { trip, packingList: items, progress: Math.round(progress), apiKey: process.env.GOOGLE_API_KEY });
         });
@@ -494,9 +498,15 @@ router.get('/:trip_id/bookings', (req, res) => {
         if (err || tripResults.length === 0) return res.status(404).send("Trip not found.");
         const trip = tripResults[0];
 
+         // 🎯 Format trip dates
+    const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+    trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
+    trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
+    
+
         db.query(bookingsQuery, [trip_id], (err, bookings) => {
             if (err) return res.status(500).send("Failed to retrieve bookings.");
-            res.render('pages/bookings', { trip, bookings });
+            res.render('pages/bookings', { trip, bookings, apiKey: process.env.GOOGLE_API_KEY });
         });
     });
 });
@@ -505,6 +515,7 @@ router.get('/:trip_id/bookings', (req, res) => {
 router.get('/:trip_id/bookings/download/:booking_id', (req, res) => {
     const { booking_id } = req.params;
     const sql = "SELECT * FROM bookings WHERE booking_id = ?";
+
 
     db.query(sql, [booking_id], (err, results) => {
         if (err || results.length === 0) return res.status(404).send("File not found.");

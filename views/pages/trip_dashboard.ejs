@@ -34,22 +34,17 @@
     </nav>
 
     <!-- Trip Dashboard Container -->
-<!-- Trip Overview (Top Left Tile) -->
-<div class="col-md-4">
-    <div class="card trip-overview">
-        <img src="https://maps.googleapis.com/maps/api/staticmap?center=<%= encodeURIComponent(trip.start_location) %>&zoom=12&size=400x250&maptype=roadmap&key=<%= apiKey %>" 
-        class="card-img-top" alt="Trip Image" onerror="this.style.display='none'; console.error('❌ Google Maps image failed to load.');">        <div class="card-body">
-            <h5 class="card-title"><%= trip.trip_name %></h5>
-            <p class="card-text"><strong><%= trip.formattedStartDate %> - <%= trip.formattedEndDate %></strong></p>
-            <a href="/trips/<%= trip.trip_id %>/edit" class="btn btn-warning w-100">Edit Trip</a>
-        </div>
-    </div>
-</div>
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Trip Overview (Left Side) -->
+            <div class="col-md-3">
+                <%- include('../partials/trip_tile2') %>
+            </div>
 
-            <!-- Trip Builder Tiles -->
+            <!-- Trip Builder Tiles (Right Side) -->
             <div class="col-md-8">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
+                <div class="row g-3">
+                    <div class="col-md-6">
                         <a href="/trips/<%= trip.trip_id %>/packing_list" class="card trip-tile text-center">
                             <div class="card-body">
                                 <h5 class="card-title">Packing List</h5>
@@ -57,41 +52,40 @@
                         </a>
                     </div>
 
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6">
                         <a href="/trips/<%= trip.trip_id %>/itinerary" class="card trip-tile text-center">
                             <div class="card-body">
                                 <h5 class="card-title">Itinerary</h5>
-                                <i class="bi bi-list-check"></i>
                             </div>
                         </a>
                     </div>
 
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6">
                         <a href="/trips/<%= trip.trip_id %>/budget" class="card trip-tile text-center">
                             <div class="card-body">
                                 <h5 class="card-title">Budget</h5>
-                                <i class="bi bi-cash"></i>
                             </div>
                         </a>
                     </div>
 
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6">
                         <a href="/trips/<%= trip.trip_id %>/bookings" class="card trip-tile text-center">
                             <div class="card-body">
                                 <h5 class="card-title">Bookings</h5>
-                                <i class="bi bi-house-door"></i>
                             </div>
                         </a>
                     </div>
 
-                    <div class="col-md-6 mb-3">
+                    <!-- Uncomment if needed -->
+                    <!-- 
+                    <div class="col-md-6">
                         <a href="/trips/<%= trip.trip_id %>/daybyday" class="card trip-tile text-center">
                             <div class="card-body">
                                 <h5 class="card-title">Day by Day</h5>
-                                <i class="bi bi-calendar3"></i>
                             </div>
                         </a>
-                    </div>
+                    </div> 
+                    -->
                 </div>
             </div>
         </div>

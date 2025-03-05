@@ -1,0 +1,8 @@
+<div class="card">
+    <img src="https://maps.googleapis.com/maps/api/staticmap?center=<%= encodeURIComponent(trip.start_location) %>&zoom=12&size=400x250&maptype=roadmap&key=<%= apiKey %>" class="card-img-top">
+    <div class="card-body">
+        <h5 class="card-title"><%= trip.trip_name %></h5>
+        <p><strong><%= trip.formattedStartDate %> - <%= trip.formattedEndDate %></strong></p>
+        <a href="/trips/<%= trip.trip_id %>/edit" class="btn btn-warning w-100">Edit Trip</a>
+    </div>
+</div>
