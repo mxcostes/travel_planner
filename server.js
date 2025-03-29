@@ -51,6 +51,7 @@ app.use('/users', usersRoutes);
 app.use('/auth', authRoutes);
 
 // Homepage Route
+// Homepage Route
 app.get('/', (req, res) => {
     if (!req.session.user || !req.session.user.id) {
         return res.redirect('/auth/login'); // Ensure the user is logged in
@@ -60,12 +61,13 @@ app.get('/', (req, res) => {
     const today = new Date().toISOString().split('T')[0]; // 🔥 Ensures YYYY-MM-DD format
 
     const tripsSql = `
-        SELECT *,
-        DATE_FORMAT(start_date, '%Y-%m-%d') AS formatted_start_date,
-        DATE_FORMAT(end_date, '%Y-%m-%d') AS formatted_end_date
-        FROM trips 
-        WHERE user_id = ?
-        ORDER BY start_date ASC
+        SELECT t.*, s.role, 
+        DATE_FORMAT(t.start_date, '%Y-%m-%d') AS formatted_start_date,
+        DATE_FORMAT(t.end_date, '%Y-%m-%d') AS formatted_end_date
+        FROM trips t
+        JOIN trip_users s ON t.trip_id = s.trip_id
+        WHERE s.user_id = ?  --  Ensures we fetch both owned & shared trips
+        ORDER BY t.start_date ASC
     `;
 
     db.query(tripsSql, [userId], (err, trips) => {
@@ -73,37 +75,61 @@ app.get('/', (req, res) => {
             console.error("❌ Failed to fetch trips:", err);
             return res.status(500).send("Database error fetching trips.");
         }
-
+    
         const pastTrips = [];
         const upcomingTrips = [];
         const unscheduledTrips = [];
+        const sharedTrips = [];
         let nextTrip = null;
-
+    
+        const seenTripIds = new Set(); // 🔹 Prevent duplicates in non-shared lists
+    
         trips.forEach(trip => {
             const startDate = trip.formatted_start_date;
             const endDate = trip.formatted_end_date;
-            const tripId = trip.trip_id;
-            const tripName = trip.trip_name;
-
-            if (!startDate || !endDate) {
-                unscheduledTrips.push(trip);
-            } else if (endDate < today) {
-                pastTrips.push(trip);
-            } else {
-                upcomingTrips.push(trip);
-                if (!nextTrip) nextTrip = trip; // Assign first upcoming trip
+            const isShared = trip.role && trip.role !== 'owner'; // ✅ Only trips where user is NOT the owner are shared
+    
+            if (isShared) {
+                sharedTrips.push(trip); // ✅ Always push shared trips
+            } else if (!seenTripIds.has(trip.trip_id)) { 
+                // ✅ Avoid duplicate entries for owned trips
+                seenTripIds.add(trip.trip_id);
+    
+                if (!startDate || !endDate) {
+                    unscheduledTrips.push(trip);
+                } else if (endDate < today) {
+                    pastTrips.push(trip);
+                } else if (endDate >= today) {
+                    upcomingTrips.push(trip); // ✅ Push first, then assign nextTrip
+                    if (!nextTrip) {
+                        nextTrip = trip; // ✅ Now nextTrip is guaranteed to be in upcomingTrips
+                    }
+                }
             }
         });
-
+    
+        // 🔹 Console log trip names within each bucket
+        console.log("\n📌 Past Trips:");
+        pastTrips.forEach(trip => console.log(`   - ${trip.trip_name}`));
+    
+        console.log("\n📌 Upcoming Trips:");
+        upcomingTrips.forEach(trip => console.log(`   - ${trip.trip_name}`));
+    
+        console.log("\n📌 Unscheduled Trips:");
+        unscheduledTrips.forEach(trip => console.log(`   - ${trip.trip_name}`));
+    
+        console.log("\n📌 Shared Trips:");
+        sharedTrips.forEach(trip => console.log(`   - ${trip.trip_name}`));
+    
         res.render('pages/dashboard', { 
             user: req.session.user,
-            trips: { pastTrips, upcomingTrips, unscheduledTrips },
+            trips: { pastTrips, upcomingTrips, unscheduledTrips, sharedTrips },
             nextTrip
         });
     });
 });
 
-// Dashboard Route
+// Dashboard Route - consider deleting
 app.get('/dashboard', (req, res) => {
     if (!req.session.user || !req.session.user.id) {
         return res.redirect('/auth/login'); // Ensure the user is logged in
@@ -113,11 +139,13 @@ app.get('/dashboard', (req, res) => {
     const today = new Date().toISOString().split('T')[0]; // 🔥 Ensures YYYY-MM-DD format
 
     const tripsSql = `
-        SELECT *,
+        SELECT distinct t.*,
         DATE_FORMAT(start_date, '%Y-%m-%d') AS formatted_start_date,
         DATE_FORMAT(end_date, '%Y-%m-%d') AS formatted_end_date
-        FROM trips 
-        WHERE user_id = ?
+         FROM trips t
+        join trip_users  s
+        on t.trip_id = s.trip_id
+        WHERE t.user_id = ?
         ORDER BY start_date ASC
     `;
 
@@ -130,6 +158,7 @@ app.get('/dashboard', (req, res) => {
         const pastTrips = [];
         const upcomingTrips = [];
         const unscheduledTrips = [];
+        const sharedTrips = [];
         let nextTrip = null;
 
         trips.forEach(trip => {
@@ -148,7 +177,7 @@ app.get('/dashboard', (req, res) => {
 
         res.render('pages/dashboard', { 
             user: req.session.user,
-            trips: { pastTrips, upcomingTrips, unscheduledTrips },
+            trips: { pastTrips, upcomingTrips, unscheduledTrips, sharedTrips },
             nextTrip
         });
     });
@@ -163,7 +192,10 @@ app.get('/trip_add', (req, res) => {
 });
 
 // Start the Server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
 
+// app.listen(3000, '0.0.0.0', () => {
+//     console.log("Server running on port 3000");
+//   });

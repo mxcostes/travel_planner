@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,90 +8,86 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/styles.css"> <!-- Link to custom styles -->
 </head>
+
 <body>
 
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">KOSMOS</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="trip_add">Add Trip</a></li>
+    <%- include('../partials/navbar') %>
 
-                    <% if (typeof user !== 'undefined' && user) { %>
-                        <li class="nav-item"><a class="nav-link disabled">Hello, <%= user.username %></a></li>
-                        <li class="nav-item"><a class="nav-link" href="/auth/logout">Logout</a></li>
-                    <% } else { %>
-                        <li class="nav-item"><a class="nav-link" href="/auth/signup">Sign Up</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/auth/login">Login</a></li>
-                    <% } %>
-                </ul>
-            </div>
-        </div>
-    </nav>
+        <!-- Trip Dashboard Container -->
+        <div class="container mt-4">
+            <div class="row">
+                <!-- Trip Overview (Left Side) -->
+                <div class="col-md-3">
+                    <%- include('../partials/trip_tile2') %>
+                </div>
 
-    <!-- Trip Dashboard Container -->
-    <div class="container mt-4">
-        <div class="row">
-            <!-- Trip Overview (Left Side) -->
-            <div class="col-md-3">
-                <%- include('../partials/trip_tile2') %>
-            </div>
+                <!-- Trip Builder Tiles (Right Side) -->
+                <div class="col-md-8">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a href="/trips/<%= trip.trip_id %>/packing_list" class="card trip-tile text-center">
+                                <div class="card-body">
+                                    <h5 class="card-title">Packing List</h5>
+                                </div>
+                            </a>
+                        </div>
 
-            <!-- Trip Builder Tiles (Right Side) -->
-            <div class="col-md-8">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <a href="/trips/<%= trip.trip_id %>/packing_list" class="card trip-tile text-center">
-                            <div class="card-body">
-                                <h5 class="card-title">Packing List</h5>
-                            </div>
-                        </a>
+                        <div class="col-md-6">
+                            <a href="/trips/<%= trip.trip_id %>/itinerary" class="card trip-tile text-center">
+                                <div class="card-body">
+                                    <h5 class="card-title">Itinerary</h5>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-6">
+                            <a href="/trips/<%= trip.trip_id %>/budget" class="card trip-tile text-center">
+                                <div class="card-body">
+                                    <h5 class="card-title">Budget</h5>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-6">
+                            <a href="/trips/<%= trip.trip_id %>/bookings" class="card trip-tile text-center">
+                                <div class="card-body">
+                                    <h5 class="card-title">Bookings</h5>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="card p-3">
+                            <h5>Share This Trip</h5>
+                            <form method="POST" action="/trips/<%= trip.trip_id %>/share">
+                                <input type="email" class="form-control mb-2" name="user_email" placeholder="User Email"
+                                    required>
+                                <select class="form-select mb-2" name="role">
+                                    <option value="viewer">Viewer</option>
+                                    <option value="editor">Editor</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary w-100">Share Trip</button>
+                            </form>
+                        </div>
+                        <h5>Shared Users</h5>
+                        <ul class="list-group">
+                            <% sharedUsers.forEach(user=> { %>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <%= user.email %> (<%= user.role %>)
+                                            <form method="POST" action="/trips/<%= trip.trip_id %>/share/remove"
+                                                style="display:inline;">
+                                                <input type="hidden" name="user_id" value="<%= user.user_id %>">
+                                                <button class="btn btn-danger btn-sm">Remove</button>
+                                            </form>
+                                </li>
+                                <% }) %>
+                        </ul>
                     </div>
-
-                    <div class="col-md-6">
-                        <a href="/trips/<%= trip.trip_id %>/itinerary" class="card trip-tile text-center">
-                            <div class="card-body">
-                                <h5 class="card-title">Itinerary</h5>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6">
-                        <a href="/trips/<%= trip.trip_id %>/budget" class="card trip-tile text-center">
-                            <div class="card-body">
-                                <h5 class="card-title">Budget</h5>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6">
-                        <a href="/trips/<%= trip.trip_id %>/bookings" class="card trip-tile text-center">
-                            <div class="card-body">
-                                <h5 class="card-title">Bookings</h5>
-                            </div>
-                        </a>
-                    </div>
-
-                    <!-- Uncomment if needed -->
-                    <!-- 
-                    <div class="col-md-6">
-                        <a href="/trips/<%= trip.trip_id %>/daybyday" class="card trip-tile text-center">
-                            <div class="card-body">
-                                <h5 class="card-title">Day by Day</h5>
-                            </div>
-                        </a>
-                    </div> 
-                    -->
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

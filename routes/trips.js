@@ -4,16 +4,12 @@ const db = require('../config/db');
 const upload = require('../config/multer');
 const path = require('path');
 const axios = require('axios');
+const checkTripAccess = require('../middleware/tripAccess'); // Import middleware
 require('dotenv').config();
 
 // Example route to verify it's working
 router.get('/', (req, res) => {
     res.send("Trips route is working!");
-});
-
-router.get('/test', (req, res) => {
-    console.log("✅ /test route is working.");
-    res.send("🟢 Test route works!");
 });
 
 //Trip Add/Create page and funtion
@@ -25,7 +21,6 @@ router.get('/trip_add', (req, res) => {
 });
 
 // Handle Trip Creation
-
 router.post('/create', (req, res) => {
     const { trip_name, start_date, end_date, start_location, end_location } = req.body;
 
@@ -59,7 +54,8 @@ router.post('/create', (req, res) => {
     });
 });
 
-router.get('/:trip_id/edit', (req, res) => {
+// Edit Trip Page and Function
+router.get('/:trip_id/edit', checkTripAccess("editor"), (req, res) => {
     const { trip_id } = req.params;
     const tripSql = "SELECT * FROM trips WHERE trip_id = ?";
 
@@ -79,7 +75,8 @@ router.get('/:trip_id/edit', (req, res) => {
     });
 });
 
-router.post('/:trip_id/edit', (req, res) => {
+// Handle Trip Update
+router.post('/:trip_id/edit', checkTripAccess("editor"), (req, res) => {
     const { trip_id } = req.params;
     const { trip_name, start_location, end_location, start_date, end_date } = req.body;
 
@@ -101,10 +98,69 @@ router.post('/:trip_id/edit', (req, res) => {
     });
 });
 
-router.get('/:trip_id/budget', (req, res) => {
+// Share Trip
+router.post('/:trip_id/share', checkTripAccess("owner"), (req, res) => {
+    const { trip_id } = req.params;
+    const { user_email, role } = req.body;
+    
+    const getUserSql = "SELECT user_id FROM users WHERE email = ?";
+    const insertShareSql = "INSERT INTO trip_users (trip_id, user_id, role) VALUES (?, ?, ?)";
+
+    db.query(getUserSql, [user_email], (err, userResult) => {
+        if (err || userResult.length === 0) {
+            return res.status(404).send("User not found.");
+        }
+        const user_id = userResult[0].user_id;
+
+        db.query(insertShareSql, [trip_id, user_id, role], (err) => {
+            if (err) return res.status(500).send("Failed to share trip.");
+            res.redirect(`/trips/${trip_id}`);
+        });
+    });
+});
+
+//update user permissions
+router.post('/:trip_id/share/update', checkTripAccess("owner"), (req, res) => {
+    const { trip_id } = req.params;
+    const { user_id, role } = req.body;
+    
+    const updateRoleSql = "UPDATE trip_users SET role = ? WHERE trip_id = ? AND user_id = ?";
+    
+    db.query(updateRoleSql, [role, trip_id, user_id], (err) => {
+        if (err) return res.status(500).send("Failed to update role.");
+        res.redirect(`/trips/${trip_id}/manage-sharing`);
+    });
+});
+
+//remove user permissions
+router.post('/:trip_id/share/remove', checkTripAccess("owner"), (req, res) => {
+    const { trip_id } = req.params;
+    const { user_id } = req.body;
+    
+    const deleteUserSql = "DELETE FROM trip_users WHERE trip_id = ? AND user_id = ?";
+    
+    db.query(deleteUserSql, [trip_id, user_id], (err) => {
+        if (err) return res.status(500).send("Failed to remove user.");
+        res.redirect(`/trips/${trip_id}/manage-sharing`);
+    });
+});
+
+// Route to Delete Trip
+router.post('/:trip_id/delete', checkTripAccess("owner"), (req, res) => {
+    const { trip_id } = req.params;
+    
+    const deleteTripSql = "DELETE FROM trips WHERE trip_id = ?";
+
+    db.query(deleteTripSql, [trip_id], (err) => {
+        if (err) return res.status(500).send("Failed to delete trip.");
+        res.redirect('/dashboard');
+    });
+});
+
+//Render budget page
+router.get('/:trip_id/budget', checkTripAccess("viewer"), (req, res) => {
     const { trip_id } = req.params;
 
-    // ✅ Define all SQL queries before usage
     const sqlTrip = "SELECT * FROM trips WHERE trip_id = ?";
     const sqlExpenses = "SELECT * FROM expenses WHERE trip_id = ? ORDER BY expense_date DESC";
 
@@ -121,7 +177,6 @@ router.get('/:trip_id/budget', (req, res) => {
 
         const trip = tripResult[0];
 
-        // 🎯 Format trip start & end dates
         const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
         trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
         trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
@@ -132,19 +187,15 @@ router.get('/:trip_id/budget', (req, res) => {
                 return res.status(500).send("❌ Failed to fetch expenses.");
             }
 
-            // ✅ Expense Summaries by Category & Date
             const summary = { byCategory: {}, byDate: {} };
             expenses.forEach(expense => {
                 expense.formattedDate = new Date(expense.expense_date).toLocaleDateString('en-US', options);
 
-                // ✅ Ensure amount is a valid float
                 const expenseAmount = parseFloat(expense.amount) || 0.00;
 
-                // 🏷️ Group by Category
                 summary.byCategory[expense.category] = 
                     (summary.byCategory[expense.category] || 0) + expenseAmount;
 
-                // 📅 Group by Date
                 summary.byDate[expense.formattedDate] = 
                     (summary.byDate[expense.formattedDate] || 0) + expenseAmount;
             });
@@ -154,11 +205,13 @@ router.get('/:trip_id/budget', (req, res) => {
                 trip,
                 expenses,
                 expenseSummary: summary,
-                apiKey: process.env.GOOGLE_API_KEY  // ✅ Ensures API key is passed
+                apiKey: process.env.GOOGLE_API_KEY,
+                edit: req.query.edit // ✅ Pass edit param to the template
             });
         });
     });
 });
+
 
 // ✍️ Route to Add a New Expense
 router.post('/:trip_id/budget/add', (req, res) => {
@@ -181,9 +234,9 @@ router.post('/:trip_id/budget/add', (req, res) => {
             return res.status(500).send("❌ Failed to add expense.");
         }
 
-        console.log("✅ Expense added successfully");
+        console.log("Expense added successfully");
 
-        // ✅ Fetch updated expenses after insertion
+        // Fetch updated expenses after insertion
         const sqlFetchExpenses = "SELECT * FROM expenses WHERE trip_id = ? ORDER BY expense_date DESC";
 
         db.query(sqlFetchExpenses, [trip_id], (err, expenses) => {
@@ -209,11 +262,45 @@ router.post('/:trip_id/budget/add', (req, res) => {
                     (summary.byDate[expense.formattedDate] || 0) + expense.amount;
             });
 
-            // ✅ Redirect back to budget page with updated expenses
+            // Redirect back to budget page with updated expenses
             res.redirect(`/trips/${trip_id}/budget`);
         });
     });
 });
+
+router.post('/:trip_id/budget/delete/:expense_id', (req, res) => {
+    const { trip_id, expense_id } = req.params;
+
+    const sql = "DELETE FROM expenses WHERE expense_id = ? AND trip_id = ?";
+
+    db.query(sql, [expense_id, trip_id], (err) => {
+        if (err) {
+            console.error("❌ Failed to delete expense:", err);
+            return res.status(500).send("Error deleting expense.");
+        }
+        res.redirect(`/trips/${trip_id}/budget`);
+    });
+});
+
+router.post('/:trip_id/budget/update/:expense_id', (req, res) => {
+    const { trip_id, expense_id } = req.params;
+    const { category, description, amount, expense_date } = req.body;
+
+    const sql = `
+        UPDATE expenses 
+        SET category = ?, description = ?, amount = ?, expense_date = ?
+        WHERE expense_id = ? AND trip_id = ?
+    `;
+
+    db.query(sql, [category, description, parseFloat(amount), expense_date, expense_id, trip_id], (err) => {
+        if (err) {
+            console.error("❌ Failed to update expense:", err);
+            return res.status(500).send("Error updating expense.");
+        }
+        res.redirect(`/trips/${trip_id}/budget`);
+    });
+});
+
 
 // Route: Add Item to Packing List
 router.post('/:trip_id/packing_list/add', (req, res) => {
@@ -227,6 +314,40 @@ router.post('/:trip_id/packing_list/add', (req, res) => {
     });
 });
 
+// Route: Delete Item from Packing List
+router.post('/:trip_id/packing_list/delete/:item_id', (req, res) => {
+    const { trip_id, item_id } = req.params;
+    const sql = "DELETE FROM packing_list WHERE item_id = ? AND trip_id = ?";
+
+    db.query(sql, [item_id, trip_id], (err) => {
+        if (err) {
+            console.error("❌ Error deleting packing list item:", err);
+            return res.status(500).send("❌ Failed to delete item.");
+        }
+        res.redirect(`/trips/${trip_id}/packing_list`);
+    });
+});
+
+// Route: Update Packing List Item Name
+router.post('/:trip_id/packing_list/edit/:item_id', (req, res) => {
+    const { trip_id, item_id } = req.params;
+    const { item_name } = req.body;
+
+    if (!item_name) {
+        return res.status(400).send("Item name cannot be empty.");
+    }
+
+    const sql = "UPDATE packing_list SET item_name = ? WHERE item_id = ? AND trip_id = ?";
+
+    db.query(sql, [item_name, item_id, trip_id], (err) => {
+        if (err) {
+            console.error("❌ Failed to update item:", err);
+            return res.status(500).send("Failed to update item.");
+        }
+        res.redirect(`/trips/${trip_id}/packing_list`);
+    });
+});
+
 // Route: Update Packed Status
 router.patch('/:trip_id/packing_list/update/:item_id', (req, res) => {
     const { trip_id, item_id } = req.params;
@@ -234,7 +355,7 @@ router.patch('/:trip_id/packing_list/update/:item_id', (req, res) => {
     const sql = "UPDATE packing_list SET packed = ? WHERE item_id = ? AND trip_id = ?";
 
     db.query(sql, [packed, item_id, trip_id], (err) => {
-        if (err) return res.status(500).json({ error: "❌ DB Update Error" });
+        if (err) return res.status(500).json({ error: "DB Update Error" });
         res.json({ success: true });
     });
 });
@@ -266,58 +387,7 @@ router.get('/:trip_id/packing_list', (req, res) => {
 });
 
 
-// // 🌟 Route to render Itinerary Page (Updated with accommodations and formatted trip + activity dates)
-// router.get('/:trip_id/itinerary', (req, res) => {
-//     const { trip_id } = req.params;
-//     const selectedDate = req.query.date || new Date().toISOString().split('T')[0];
-
-//     const tripSql = "SELECT * FROM trips WHERE trip_id = ?";
-//     const activitiesSql = `
-//         SELECT * FROM itinerary 
-//         WHERE trip_id = ? AND activity_date = ?
-//         ORDER BY start_time ASC
-//     `;
-//     const accommodationsSql = `
-//         SELECT * FROM accommodations
-//         WHERE trip_id = ?
-//     `;
-
-//     db.query(tripSql, [trip_id], (err, tripResult) => {
-//         if (err || tripResult.length === 0) {
-//             console.error("❌ Trip not found:", err);
-//             return res.status(404).send("Trip not found.");
-//         }
-//         const trip = tripResult[0];
-
-//         // 🎯 Format trip start and end dates
-//         const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-//         trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
-//         trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
-
-//         db.query(activitiesSql, [trip_id, selectedDate], (err, activitiesResult) => {
-//             if (err) return res.status(500).send("❌ Failed to fetch activities.");
-
-//             // 🎯 Format activity dates
-//             activitiesResult.forEach(activity => {
-//                 activity.formattedActivityDate = new Date(activity.activity_date).toLocaleDateString('en-US', options);
-//             });
-
-//             db.query(accommodationsSql, [trip_id], (err, accommodationsResult) => {
-//                 if (err) return res.status(500).send("❌ Failed to fetch accommodations.");
-
-//                 res.render('pages/itinerary', {
-//                     user: req.session.user || { username: "Guest" },
-//                     trip,
-//                     activities: activitiesResult,
-//                     accommodations: accommodationsResult,
-//                     selectedDate,
-//                     apiKey: process.env.GOOGLE_API_KEY
-//                 });
-//             });
-//         });
-//     });
-// });
-// 🌟 Route to render Itinerary Page (Updated with accommodations and formatted trip + activity dates)
+//  Route to render Itinerary Page (Updated with accommodations and formatted trip + activity dates)
 router.get('/:trip_id/itinerary', (req, res) => {
     const { trip_id } = req.params;
 
@@ -331,32 +401,35 @@ router.get('/:trip_id/itinerary', (req, res) => {
         SELECT * FROM accommodations
         WHERE trip_id = ?
     `;
+    const bookingsSql = `
+        SELECT * FROM bookings
+        WHERE trip_id = ? 
+        AND (start_date <= ? AND end_date >= ?)
+    `;
 
     db.query(tripSql, [trip_id], (err, tripResult) => {
         if (err || tripResult.length === 0) {
-            console.error("❌ Trip not found:", err);
+            console.error(" Trip not found:", err);
             return res.status(404).send("Trip not found.");
         }
         const trip = tripResult[0];
 
-        // 🎯 Format trip start and end dates
+        //  Format trip start and end dates
         const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
         trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
         trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
 
-        // ✅ If no date is selected, default to the **first date of the trip**
+        // ✅ If no date is selected, default to the first date of the trip
         let selectedDate = req.query.date || new Date(trip.start_date).toISOString().split('T')[0];
         let selectedDateFormatted = new Date(selectedDate).toLocaleDateString('en-US', options);
 
-        // ✅ Calculate totalDays for pagination
+        // ✅ Generate trip dates for pagination
+        const tripDates = [];
         const startDate = new Date(trip.start_date);
         const endDate = new Date(trip.end_date);
         const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
-        // ✅ Generate all trip dates for pagination
-        const tripDates = [];
-        const currentDate = new Date(trip.start_date);
-
+        let currentDate = new Date(trip.start_date);
         while (currentDate <= endDate) {
             tripDates.push({
                 rawDate: currentDate.toISOString().split('T')[0],
@@ -368,7 +441,6 @@ router.get('/:trip_id/itinerary', (req, res) => {
         db.query(activitiesSql, [trip_id, selectedDate], (err, activitiesResult) => {
             if (err) return res.status(500).send("❌ Failed to fetch activities.");
 
-            // 🎯 Format activity dates
             activitiesResult.forEach(activity => {
                 activity.formattedActivityDate = new Date(activity.activity_date).toLocaleDateString('en-US', options);
             });
@@ -376,16 +448,21 @@ router.get('/:trip_id/itinerary', (req, res) => {
             db.query(accommodationsSql, [trip_id], (err, accommodationsResult) => {
                 if (err) return res.status(500).send("❌ Failed to fetch accommodations.");
 
-                res.render('pages/itinerary', {
-                    user: req.session.user || { username: "Guest" },
-                    trip,
-                    tripDates,                    // ✅ Passing dates for pagination
-                    totalDays,                    // ✅ Passing totalDays to EJS
-                    activities: activitiesResult,
-                    accommodations: accommodationsResult,
-                    selectedDate,
-                    selectedDateFormatted,
-                    apiKey: process.env.GOOGLE_API_KEY
+                db.query(bookingsSql, [trip_id, selectedDate, selectedDate], (err, bookingsResult) => {
+                    if (err) return res.status(500).send("❌ Failed to fetch bookings.");
+
+                    res.render('pages/itinerary', {
+                        user: req.session.user || { username: "Guest" },
+                        trip,
+                        tripDates,
+                        totalDays,
+                        activities: activitiesResult,
+                        accommodations: accommodationsResult,
+                        bookings: bookingsResult,  // ✅ Added bookings
+                        selectedDate,
+                        selectedDateFormatted,
+                        apiKey: process.env.GOOGLE_API_KEY
+                    });
                 });
             });
         });
@@ -472,6 +549,58 @@ router.post('/:trip_id/estimate-drive-time', async (req, res) => {
     }
 });
 
+// Route: Calendar View Itinerary
+router.get('/:trip_id/calendar_itinerary', (req, res) => {
+    const { trip_id } = req.params;
+    const apiKey = process.env.GOOGLE_API_KEY;
+    
+    const tripSql = "SELECT * FROM trips WHERE trip_id = ?";
+    const activitiesSql = "SELECT *, DATE_FORMAT(activity_date, '%Y-%m-%d') AS formatted_activity_date FROM itinerary WHERE trip_id = ? ORDER BY activity_date ASC";
+    const details  = activitiesSql.details;
+
+    db.query(tripSql, [trip_id], (err, tripResult) => {
+        if (err || tripResult.length === 0) {
+            return res.status(404).send("Trip not found.");
+        }
+        const trip = tripResult[0];
+
+        // Format trip dates
+        const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+        trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
+        trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
+
+        db.query(activitiesSql,  [trip_id],  (err, activitiesResult) => {
+            if (err) return res.status(500).send("Failed to fetch activities.");
+
+            // Ensure activity dates are correctly formatted
+            activitiesResult.forEach(activity => {
+                activity.formatted_activity_date = activity.formatted_activity_date; // Ensures consistent format
+            });
+
+            // Generate tripDates list
+            const tripDates = [];
+            let currentDate = new Date(trip.start_date);
+            let endDate = new Date(trip.end_date);
+
+            while (currentDate <= endDate) {
+                tripDates.push({
+                    rawDate: currentDate.toISOString().split('T')[0], // Ensures YYYY-MM-DD format
+                    formattedDate: currentDate.toLocaleDateString('en-US', options)
+                });
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            res.render('pages/calendar_itinerary', {
+                user: req.session.user || { username: "Guest" },
+                trip,
+                activities: activitiesResult,
+                tripDates,
+                apiKey
+            });
+        });
+    });
+});
+
 // Upload booking PDF
 router.post('/:trip_id/bookings/upload', upload.single('bookingFile'), (req, res) => {
     const { trip_id } = req.params;
@@ -488,11 +617,39 @@ router.post('/:trip_id/bookings/upload', upload.single('bookingFile'), (req, res
     });
 });
 
+// ✍️ Route to Add a Booking (With File Upload Support)
+router.post('/:trip_id/bookings/add', upload.single('bookingFile'), (req, res) => {
+    const { trip_id } = req.params;
+    const { accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link } = req.body;
+
+    let file_name = null;
+    let original_name = null;
+
+    if (req.file) {
+        file_name = req.file.filename;
+        original_name = req.file.originalname;
+    }
+
+    const sql = `
+        INSERT INTO bookings (trip_id, accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name, original_name) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(sql, [trip_id, accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name, original_name], (err) => {
+        if (err) {
+            console.error("❌ Error adding booking:", err);
+            return res.status(500).send("Error adding booking.");
+        }
+        res.redirect(`/trips/${trip_id}/bookings`);
+    });
+});
+
 // Retrieve bookings for a trip
 router.get('/:trip_id/bookings', (req, res) => {
     const { trip_id } = req.params;
     const tripQuery = "SELECT * FROM trips WHERE trip_id = ?";
     const bookingsQuery = "SELECT * FROM bookings WHERE trip_id = ?";
+    const edit = req.query.edit || null;
 
     db.query(tripQuery, [trip_id], (err, tripResults) => {
         if (err || tripResults.length === 0) return res.status(404).send("Trip not found.");
@@ -506,8 +663,28 @@ router.get('/:trip_id/bookings', (req, res) => {
 
         db.query(bookingsQuery, [trip_id], (err, bookings) => {
             if (err) return res.status(500).send("Failed to retrieve bookings.");
-            res.render('pages/bookings', { trip, bookings, apiKey: process.env.GOOGLE_API_KEY });
+            res.render('pages/bookings', { trip, bookings, apiKey: process.env.GOOGLE_API_KEY, edit });
         });
+    });
+});
+
+// Update booking entry
+router.post('/:trip_id/bookings/update/:booking_id', (req, res) => {
+    const { trip_id, booking_id } = req.params;
+    const { accommodation_type, vendor_name, start_date, end_date } = req.body;
+
+    const updateSql = `
+        UPDATE bookings 
+        SET accommodation_type = ?, vendor_name = ?, start_date = ?, end_date = ?
+        WHERE booking_id = ? AND trip_id = ?
+    `;
+
+    db.query(updateSql, [accommodation_type, vendor_name, start_date, end_date, booking_id, trip_id], (err) => {
+        if (err) {
+            console.error("❌ Failed to update booking:", err);
+            return res.status(500).send("Failed to update booking.");
+        }
+        res.redirect(`/trips/${trip_id}/bookings`);
     });
 });
 
@@ -577,16 +754,16 @@ router.get('/past', (req, res) => {
     console.log("🔎 Debug - userId:", userId);
     console.log("🔎 Debug - today:", today);
 
-    let sql = "SELECT * FROM trips WHERE user_id = ? AND start_date <= ? ORDER BY start_date ASC";
+    let sql = "SELECT * FROM trips WHERE user_id = ? AND end_date <= ? ORDER BY start_date ASC";
     db.query(sql, [userId, today], (err, results) => {
         if (err) {
             console.error("❌ Error fetching trips:", err);
-            return res.status(500).send("Failed to retrieve upcoming trips.");
+            return res.status(500).send("Failed to retrieve past trips.");
         }
         console.log("🔎 Debug - Query Results:", results);
 
         if (results.length === 0) {
-            console.warn("⚠️ No upcoming trips found for user:", userId);
+            console.warn("⚠️ No past trips found for user:", userId);
         }
 
         results.forEach(trip => {
@@ -633,34 +810,77 @@ router.get('/unscheduled', (req, res) => {
     });
 });
 
+//route to unscheduled trips
+router.get('/shared', (req, res) => {
+    const userId = req.session.user?.id || 1;  // 👈 Hardcoded fallback for testing
+    const today = new Date().toISOString().split('T')[0];
+
+    console.log("🔎 Debug - userId:", userId);
+    console.log("🔎 Debug - today:", today);
+
+    let sql = "SELECT * FROM trips t join trip_users s on s.trip_id = t.trip_id WHERE s.user_id = ? AND s.role != 'owner' ORDER BY trip_name ASC";
+    db.query(sql, [userId, today], (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching trips:", err);
+            return res.status(500).send("Failed to retrieve shared trips.");
+        }
+        console.log("🔎 Debug - Query Results:", results);
+
+        if (results.length === 0) {
+            console.warn("⚠️ No shared trips found for user:", userId);
+        }
+
+        results.forEach(trip => {
+            trip.formattedStartDate = new Date(trip.start_date).toDateString();
+            trip.formattedEndDate = new Date(trip.end_date).toDateString();
+        });
+
+        res.render('pages/shared_trips', {
+            trips: results,
+            apiKey: process.env.GOOGLE_API_KEY
+        });
+    });
+});
+
 
 // Route to show the trip dashboard
 // This route will display the trip details and map
 router.get('/:trip_id', (req, res) => {
     const tripId = req.params.trip_id;
 
-    let sql = "SELECT * FROM trips WHERE trip_id = ?";
-    db.query(sql, [tripId], (err, results) => {
-        if (err || results.length === 0) {
+    const tripSql = "SELECT * FROM trips WHERE trip_id = ?";
+    const sharedUsersSql = `
+        SELECT distinct users.user_id, users.email, trip_users.role 
+        FROM trip_users
+        JOIN users ON trip_users.user_id = users.user_id
+        WHERE trip_users.trip_id = ?
+    `;
+
+    db.query(tripSql, [tripId], (err, tripResults) => {
+        if (err || tripResults.length === 0) {
             console.error("❌ Error fetching trip:", err);
             return res.status(404).send("Trip not found.");
         }
 
-        let trip = results[0];
+        let trip = tripResults[0];
 
         // Format dates
         const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
         trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
         trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
 
-        // Ensure API key is loaded
-        const apiKey = process.env.GOOGLE_API_KEY;
-        if (!apiKey) {
-            console.error("❌ Google Maps API Key is missing.");
-            return res.status(500).send("Google Maps API Key is missing.");
-        }
+        db.query(sharedUsersSql, [tripId], (err, sharedUsers) => {
+            if (err) {
+                console.error("❌ Error fetching shared users:", err);
+                return res.status(500).send("Failed to retrieve shared users.");
+            }
 
-        res.render('pages/trip_dashboard', { trip, apiKey });
+            res.render('pages/trip_dashboard', {
+                trip,
+                sharedUsers,  // ✅ Pass shared users to the EJS file
+                apiKey: process.env.GOOGLE_API_KEY
+            });
+        });
     });
 });
 

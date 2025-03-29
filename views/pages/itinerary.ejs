@@ -56,48 +56,11 @@
             </div>
         </div>
 
-        <!-- Activities Section -->
-        <!-- <div class="col-md-6">
-            <h4 class="text-center"><%= selectedDate %> Activities</h4>
-            <div class="list-group overflow-auto" style="height: 400px;">
-                <% activities.forEach((activity) => { %>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong><%= activity.activity_name %></strong> - <%= activity.formattedActivityDate %>
-                            <p><%= activity.start_time %> - <%= activity.end_time %> | <%= activity.location %></p>
-                            <% if (activity.duration) { %>
-                            <p>Duration: <%= activity.duration %></p>
-                            <% } %>
-                        </div>
-                        <div class="d-flex flex-column">
-                            <% if (activity.details) { %>
-                                <button type="button" 
-                                        class="btn btn-primary mb-2 details-btn" 
-                                        data-bs-toggle="popover" 
-                                        data-bs-trigger="click"
-                                        data-bs-placement="right"
-                                        title="Activity Details"
-                                        data-bs-content="<%= activity.details %>">
-                                    Details
-                                </button>
-                            <% } %>
-                            <% if (activity.location) { %>
-                                <a href="https://www.google.com/maps/search/?api=1&query=<%= encodeURIComponent(activity.location) %>" 
-                                   target="_blank" 
-                                   class="btn btn-sm btn-success w-100">
-                                    📍 Location
-                                </a>
-                            <% } %>
-                        </div>
-                    </div>
-                <% }); %>
-            </div>
-        </div> -->
-
         <!-- Activities Section with Pagination -->
 <div class="col-md-6">
     <h4 class="text-center">
         <%= selectedDateFormatted %> Activities
+        <a href="/trips/<%= trip.trip_id %>/calendar_itinerary" class="btn btn-light w-100 mt-2">Calendar View</a>
     </h4>
 
     <!-- Pagination for Itinerary Days -->
@@ -159,17 +122,37 @@
         
 
 
-<!-- Accommodations Section -->
+<!-- Accommodations & Bookings Section -->
 <div class="col-md-3">
     <div class="card p-3">
-        <h5>Accommodations</h5>
+        <h5>Accommodations & Bookings</h5>
+
+        <% if (accommodations.length === 0 && bookings.length === 0) { %>
+            <p>No accommodations or bookings for this date.</p>
+        <% } %>
+
         <% accommodations.forEach(acc => { %>
             <div class="card bg-dark text-light mb-2 p-2">
                 <strong><%= acc.name %></strong>
                 <p><%= acc.start_date %> - <%= acc.end_date %></p>
             </div>
         <% }); %>
+
+        <% bookings.forEach(booking => { %>
+            <div class="card bg-primary text-light mb-2 p-2">
+                <strong><%= booking.vendor_name %></strong> - <%= booking.accommodation_type %>
+                <p><%= booking.start_date %> - <%= booking.end_date %></p>
+                <% if (booking.booking_link) { %>
+                    <a href="<%= booking.booking_link %>" class="btn btn-sm btn-light" target="_blank">View Booking</a>
+                <% } %>
+                <% if (booking.file_name) { %>
+                    <a href="/trips/<%= trip.trip_id %>/bookings/download/<%= booking.booking_id %>"
+                       class="btn btn-sm btn-success">Download</a>
+                <% } %>
+            </div>
+        <% }); %>
     </div>
+</div>
 
     <!-- 🚗 Driving Time Estimator (Fixed Bottom-Right) -->
 <div class="position-fixed bottom-0 end-0 m-3 p-3 bg-light shadow rounded" style="width: 320px; z-index: 1050;">

@@ -54,9 +54,9 @@
             <!-- Trip Summary Cards -->
             <div class="col-md-8">
                 <div class="row">
-                    <% let tripCategories = ["Past Trips", "Upcoming Trips", "Unscheduled Trips"]; %>
-                    <% let tripRoutes = ["/trips/past", "/trips/upcoming", "/trips/unscheduled"]; %>
-                    <% let tripData = [trips.pastTrips, trips.upcomingTrips, trips.unscheduledTrips]; %>
+                    <% let tripCategories = ["Past Trips", "Upcoming Trips", "Unscheduled Trips" , "Shared Trips"]; %>
+                    <% let tripRoutes = ["/trips/past", "/trips/upcoming", "/trips/unscheduled", "/trips/shared"]; %>
+                    <% let tripData = [trips.pastTrips, trips.upcomingTrips, trips.unscheduledTrips, trips.sharedTrips]; %>
             
                     <% for(let i = 0; i < tripCategories.length; i++) { %>
                         <div class="col-md-4">
