@@ -69,10 +69,10 @@
                                             <a href="/trips/<%= trip.trip_id %>/bookings/download/<%= file.booking_id %>"
                                                class="btn btn-success btn-sm">Download</a>
                                         <% } %>
-                                        <a href="/trips/<%= trip.trip_id %>/bookings?edit=<%= file.booking_id %>" class="btn btn-warning btn-sm">Edit</a>
+                                        <a href="/trips/<%= trip.trip_id %>/bookings?edit=<%= file.booking_id %>" class="btn btn-warning btn-sm">✏️</a>
                                         <form action="/trips/<%= trip.trip_id %>/bookings/delete/<%= file.booking_id %>"
                                               method="POST" style="display:inline;">
-                                            <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                                            <button class="btn btn-danger btn-sm" type="submit">🗑️</button>
                                         </form>
                                     </td>
                                 <% } %>
