@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Bookings - Kosmos</title>
@@ -7,187 +8,273 @@
     <link rel="stylesheet" href="/css/styles.css">
     <script src="https://maps.googleapis.com/maps/api/js?key=<%= apiKey %>&libraries=places"></script>
 </head>
+
 <body>
 
     <!-- Navigation Bar -->
     <%- include('../partials/navbar') %>
 
-    <div class="container mt-4">
-        <div class="row">
-            <!-- Left Panel: Trip Overview -->
-            <div class="col-md-3">
-                <div class="card">
-                    <img src="https://maps.googleapis.com/maps/api/staticmap?center=<%= encodeURIComponent(trip.start_location) %>&zoom=12&size=400x250&maptype=roadmap&key=<%= apiKey %>" 
-                         class="card-img-top">
-                    <div class="card-body">
-                        <h5 class="card-title"><%= trip.trip_name %></h5>
-                        <p><strong><%= trip.formattedStartDate %> - <%= trip.formattedEndDate %></strong></p>
-                        <a href="/trips/<%= trip.trip_id %>/edit" class="btn btn-warning w-100">Edit Trip</a>
+        <div class="container mt-4">
+            <div class="row">
+                <!-- Left Panel: Trip Overview -->
+                <div class="col-md-3">
+                    <div class="card">
+                        <img src="https://maps.googleapis.com/maps/api/staticmap?center=<%= encodeURIComponent(trip.start_location) %>&zoom=12&size=400x250&maptype=roadmap&key=<%= apiKey %>"
+                            class="card-img-top">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <%= trip.trip_name %>
+                            </h5>
+                            <p><strong>
+                                    <%= trip.formattedStartDate %> - <%= trip.formattedEndDate %>
+                                </strong></p>
+                            <a href="/trips/<%= trip.trip_id %>/edit" class="btn btn-warning w-100">Edit Trip</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Panel: Stored Bookings List -->
+                <div class="col-md-6">
+                    <h3 class="text-center">Bookings for <%= trip.trip_name %>
+                    </h3>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Vendor</th>
+                                <th>Dates</th>
+                                <th>Location</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% bookings.forEach((file)=> {
+                                const isEditing = parseInt(edit) === file.booking_id;
+                                %>
+                                <tr>
+                                    <% if (isEditing) { %>
+                                        <form method="POST"
+                                            action="/trips/<%= trip.trip_id %>/bookings/update/<%= file.booking_id %>">
+                                            <td>
+                                                <select class="form-select" id="type" name="accommodation_type"
+                                                    required>
+                                                    <option value=""><%= file.accommodation_type %></option>
+                                                    <option value="Transportation"
+                                                        <%=file.accommodation_type==='Transportation' ? 'selected' : ''
+                                                        %>>Transportation</option>
+                                                    <option value="Lodging" <%=file.accommodation_type==='Lodging'
+                                                        ? 'selected' : '' %>>Lodging</option>
+                                                    <option value="Activity" <%=file.accommodation_type==='Activity'
+                                                        ? 'selected' : '' %>>Activity</option>
+                                                    <option value="Food" <%=file.accommodation_type==='Food'
+                                                        ? 'selected' : '' %>>Food</option>
+                                                </select>
+                                                <!--<input type="text" name="accommodation_type"
+                                                    value="<%= file.accommodation_type %>" class="form-control">
+                                                    > -->
+                                            </td>
+                                            <td><input type="text" name="vendor_name" value="<%= file.vendor_name %>"
+                                                    class="form-control"></td>
+                                            <td>
+                                                <input type="date" name="start_date"
+                                                    value="<%= file.formatted_start_date || '' %>"
+                                                    class="form-control mb-1">
+                                                <input type="date" name="end_date"
+                                                    value="<%= file.formatted_end_date || '' %>"
+                                                    class="form-control mb-1">
+                                            </td>
+                                            <td>
+                                                <input type="text" id="inline_start_location_<%= file.booking_id %>"
+                                                    name="start_location" value="<%= file.start_location || '' %>"
+                                                    class="form-control mb-1" placeholder="Start location">
+                                                <input type="text" id="inline_end_location_<%= file.booking_id %>"
+                                                    name="end_location" value="<%= file.end_location || '' %>"
+                                                    class="form-control mb-1" placeholder="End location">
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-success btn-sm" type="submit">Save</button>
+                                                <a href="/trips/<%= trip.trip_id %>/bookings"
+                                                    class="btn btn-secondary btn-sm">Cancel</a>
+                                            </td>
+                                        </form>
+                                        <% } else { %>
+                                            <td>
+                                                <%= file.accommodation_type %>
+                                            </td>
+                                            <td>
+                                                <%= file.vendor_name %>
+                                            </td>
+                                            <td>
+                                                <%= file.formatted_start_date %>
+                                                    <% if (file.formatted_end_date) { %> to <%= file.formatted_end_date
+                                                            %>
+                                                            <% } %>
+                                            </td>
+                                            <td>
+                                                <%= file.start_location %>
+                                                    <% if (file.end_location) { %> to <%= file.end_location %>
+                                                            <% } %>
+                                            </td>
+                                            <td>
+                                                <% if (file.booking_link) { %>
+                                                    <a href="<%= file.booking_link %>" class="btn btn-info btn-sm"
+                                                        target="_blank">🔗</a>
+                                                    <% } %>
+                                                        <% if (file.file_name) { %>
+                                                            <a href="/trips/<%= trip.trip_id %>/bookings/download/<%= file.booking_id %>"
+                                                                class="btn btn-success btn-sm">📄</a>
+                                                            <% } %>
+                                                                <a href="/trips/<%= trip.trip_id %>/bookings?edit=<%= file.booking_id %>"
+                                                                    class="btn btn-warning btn-sm">✏️</a>
+                                                                <form
+                                                                    action="/trips/<%= trip.trip_id %>/bookings/delete/<%= file.booking_id %>"
+                                                                    method="POST" style="display:inline;">
+                                                                    <button class="btn btn-danger btn-sm"
+                                                                        type="submit">🗑️</button>
+                                                                </form>
+                                            </td>
+                                            <% } %>
+                                </tr>
+                                <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+
+
+                <!-- Right Panel: Add Booking Form -->
+                <div class="col-md-3">
+                    <div class="card p-3">
+                        <h4>Add Booking</h4>
+                        <form action="/trips/<%= trip.trip_id %>/bookings/add" method="POST"
+                            enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="accommodation_type" class="form-label">Accommodation Type</label>
+                                <select class="form-select" id="accommodation_type" name="accommodation_type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Transportation">Transportation</option>
+                                    <option value="Lodging">Lodging</option>
+                                    <option value="Activity">Activity</option>
+                                    <option value="Food">Food</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="vendor_name" class="form-label">Vendor Name</label>
+                                <input type="text" class="form-control" id="vendor_name" name="vendor_name" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date">
+                            </div>
+
+                            <!-- Booking Link -->
+                            <div class="mb-3">
+                                <label for="booking_link" class="form-label">Booking Link (Optional)</label>
+                                <input type="url" class="form-control" id="booking_link" name="booking_link"
+                                    placeholder="https://example.com/booking">
+                            </div>
+
+                            <!-- Location Inputs -->
+                            <div id="regular_location_group" class="mb-3">
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="location" name="location"
+                                    placeholder="Enter a location">
+                            </div>
+
+                            <div id="transport_location_group" class="row d-none">
+                                <div class="col">
+                                    <label for="start_location" class="form-label">Start Location</label>
+                                    <input type="text" class="form-control" id="start_location" name="start_location"
+                                        placeholder="Enter start location">
+                                </div>
+                                <div class="col">
+                                    <label for="end_location" class="form-label">End Location</label>
+                                    <input type="text" class="form-control" id="end_location" name="end_location"
+                                        placeholder="Enter end location">
+                                </div>
+                            </div>
+
+                            <!-- File Upload -->
+                            <div class="mb-3">
+                                <label for="bookingFile" class="form-label">Upload Booking File (PDF):</label>
+                                <input type="file" class="form-control" name="bookingFile" accept=".pdf">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 mt-3">Add Booking</button>
+                        </form>
                     </div>
                 </div>
             </div>
-
-            <!-- Center Panel: Stored Bookings List -->
-            <div class="col-md-6">
-                <h3 class="text-center">Bookings for <%= trip.trip_name %></h3>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Category</th>
-                            <th>Vendor</th>
-                            <th>Dates</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% bookings.forEach((file) => { 
-                            const isEditing = parseInt(edit) === file.booking_id;
-                        %>
-                            <tr>
-                                <% if (isEditing) { %>
-                                    <form method="POST" action="/trips/<%= trip.trip_id %>/bookings/update/<%= file.booking_id %>">
-                                        <td><input type="text" name="accommodation_type" value="<%= file.accommodation_type %>" class="form-control"></td>
-                                        <td><input type="text" name="vendor_name" value="<%= file.vendor_name %>" class="form-control"></td>
-                                        <td>
-                                            <input type="date" name="start_date" value="<%= file.start_date %>" class="form-control mb-1">
-                                            <input type="date" name="end_date" value="<%= file.end_date %>" class="form-control">
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-success btn-sm" type="submit">Save</button>
-                                            <a href="/trips/<%= trip.trip_id %>/bookings" class="btn btn-secondary btn-sm">Cancel</a>
-                                        </td>
-                                    </form>
-                                <% } else { %>
-                                    <td><%= file.accommodation_type %></td>
-                                    <td><%= file.vendor_name %></td>
-                                    <td><%= file.start_date %> to <%= file.end_date %></td>
-                                    <td>
-                                        <% if (file.booking_link) { %>
-                                            <a href="<%= file.booking_link %>" class="btn btn-info btn-sm" target="_blank">View</a>
-                                        <% } %>
-                                        <% if (file.file_name) { %>
-                                            <a href="/trips/<%= trip.trip_id %>/bookings/download/<%= file.booking_id %>"
-                                               class="btn btn-success btn-sm">Download</a>
-                                        <% } %>
-                                        <a href="/trips/<%= trip.trip_id %>/bookings?edit=<%= file.booking_id %>" class="btn btn-warning btn-sm">✏️</a>
-                                        <form action="/trips/<%= trip.trip_id %>/bookings/delete/<%= file.booking_id %>"
-                                              method="POST" style="display:inline;">
-                                            <button class="btn btn-danger btn-sm" type="submit">🗑️</button>
-                                        </form>
-                                    </td>
-                                <% } %>
-                            </tr>
-                        <% }) %>
-                    </tbody>
-                </table>
-            </div>
-            
-
-            <!-- Right Panel: Add Booking Form -->
-            <div class="col-md-3">
-                <div class="card p-3">
-                    <h4>Add Booking</h4>
-                    <form action="/trips/<%= trip.trip_id %>/bookings/add" method="POST" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="accommodation_type" class="form-label">Accommodation Type</label>
-                            <select class="form-select" id="accommodation_type" name="accommodation_type" required>
-                                <option value="">Select Type</option>
-                                <option value="Transportation">Transportation</option>
-                                <option value="Lodging">Lodging</option>
-                                <option value="Activity">Activity</option>
-                                <option value="Food">Food</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="vendor_name" class="form-label">Vendor Name</label>
-                            <input type="text" class="form-control" id="vendor_name" name="vendor_name" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="start_date" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="end_date" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date" required>
-                        </div>
-
-                        <!-- Booking Link -->
-                        <div class="mb-3">
-                            <label for="booking_link" class="form-label">Booking Link (Optional)</label>
-                            <input type="url" class="form-control" id="booking_link" name="booking_link"
-                                placeholder="https://example.com/booking">
-                        </div>
-
-                        <!-- Location Inputs -->
-                        <div id="regular_location_group" class="mb-3">
-                            <label for="location" class="form-label">Location</label>
-                            <input type="text" class="form-control" id="location" name="location" placeholder="Enter a location">
-                        </div>
-
-                        <div id="transport_location_group" class="row d-none">
-                            <div class="col">
-                                <label for="start_location" class="form-label">Start Location</label>
-                                <input type="text" class="form-control" id="start_location" name="start_location" placeholder="Enter start location">
-                            </div>
-                            <div class="col">
-                                <label for="end_location" class="form-label">End Location</label>
-                                <input type="text" class="form-control" id="end_location" name="end_location" placeholder="Enter end location">
-                            </div>
-                        </div>
-
-                        <!-- File Upload -->
-                        <div class="mb-3">
-                            <label for="bookingFile" class="form-label">Upload Booking File (PDF):</label>
-                            <input type="file" class="form-control" name="bookingFile" accept=".pdf">
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100 mt-3">Add Booking</button>
-                    </form>
-                </div>
-            </div>
         </div>
-    </div>
 
-    <!-- Google Places Autocomplete Script -->
-    <script>
-        function initAutocomplete() {
-            console.log("✅ Initializing Google Places Autocomplete...");
+        <!-- Google Places Autocomplete Script -->
+        <script>
+            function initAutocomplete() {
+                console.log("✅ Initializing Google Places Autocomplete...");
 
-            if (!window.google || !google.maps || !google.maps.places) {
-                console.error("❌ Google Places API is not loaded.");
-                return;
+                if (!window.google || !google.maps || !google.maps.places) {
+                    console.error("❌ Google Places API is not loaded.");
+                    return;
+                }
+
+                new google.maps.places.Autocomplete(document.getElementById('location'));
+                new google.maps.places.Autocomplete(document.getElementById('start_location'));
+                new google.maps.places.Autocomplete(document.getElementById('end_location'));
+
+                console.log("✨ Google Places API initialized successfully.");
+            }
+            google.maps.event.addDomListener(window, 'load', initAutocomplete);
+        </script>
+        <script>
+            function initInlineAutocomplete() {
+                const google = window.google;
+                if (!google || !google.maps || !google.maps.places) {
+                    console.error("❌ Google Places API is not loaded.");
+                    return;
+                }
+
+                // Target all inputs starting with 'inline_start_location_' or 'inline_end_location_'
+                const startInputs = document.querySelectorAll("input[id^='inline_start_location_']");
+                const endInputs = document.querySelectorAll("input[id^='inline_end_location_']");
+
+                startInputs.forEach(input => {
+                    new google.maps.places.Autocomplete(input);
+                });
+
+                endInputs.forEach(input => {
+                    new google.maps.places.Autocomplete(input);
+                });
             }
 
-            new google.maps.places.Autocomplete(document.getElementById('location'));
-            new google.maps.places.Autocomplete(document.getElementById('start_location'));
-            new google.maps.places.Autocomplete(document.getElementById('end_location'));
+            // Trigger it once DOM is ready and Google Maps API is loaded
+            google.maps.event.addDomListener(window, 'load', initInlineAutocomplete);
+        </script>
 
-            console.log("✨ Google Places API initialized successfully.");
-        }
-        google.maps.event.addDomListener(window, 'load', initAutocomplete);
-    </script>
+        <!-- Toggle Location Inputs for Transportation -->
+        <script>
+            document.getElementById('accommodation_type').addEventListener('change', function () {
+                const transportFields = document.getElementById('transport_location_group');
+                const regularField = document.getElementById('regular_location_group');
 
-    <!-- Toggle Location Inputs for Transportation -->
-    <script>
-        document.getElementById('accommodation_type').addEventListener('change', function () {
-            const transportFields = document.getElementById('transport_location_group');
-            const regularField = document.getElementById('regular_location_group');
+                if (this.value === 'Transportation') {
+                    transportFields.classList.remove('d-none');
+                    regularField.classList.add('d-none');
+                } else {
+                    transportFields.classList.add('d-none');
+                    regularField.classList.remove('d-none');
+                }
+            });
+        </script>
 
-            if (this.value === 'Transportation') {
-                transportFields.classList.remove('d-none');
-                regularField.classList.add('d-none');
-            } else {
-                transportFields.classList.add('d-none');
-                regularField.classList.remove('d-none');
-            }
-        });
-    </script>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
+
 </html>

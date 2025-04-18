@@ -1,294 +1,334 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Itinerary - Kosmos</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
     <script src="https://maps.googleapis.com/maps/api/js?key=<%= apiKey %>&libraries=places"></script>
 </head>
+
 <body>
 
-<!-- Navigation Bar -->
-<%- include('../partials/navbar') %>
+    <!-- Navigation Bar -->
+    <%- include('../partials/navbar') %>
 
-<!-- Main Content -->
-<div class="container mt-4">
-    <div class="row">
-        <!-- Trip Overview -->
-        <div class="col-md-3">
-            <%- include('../partials/trip_tile2') %>
+        <!-- Main Content -->
+        <div class="container mt-4">
+            <div class="row">
+                <!-- Trip Overview -->
+                <div class="col-md-3">
+                    <%- include('../partials/trip_tile2') %>
 
-            <!-- Add Activity Form -->
-            <div class="card mt-4 p-3">
-                <h5>Add Activity</h5>
-                <form id="add-activity-form" method="POST" action="/trips/<%= trip.trip_id %>/itinerary/add">
-                    <input type="text" class="form-control mb-2" name="activity_type" placeholder="Activity Type" required>
-                    <input type="text" class="form-control mb-2" name="activity_name" placeholder="Activity Name" required>
-                    <input type="date" class="form-control mb-2" name="activity_date" required>
-                    <input type="time" class="form-control mb-2" name="start_time" required>
+                        <!-- Add Activity Form -->
+                        <div class="card mt-4 p-3">
+                            <h5>Add Activity</h5>
+                            <form id="add-activity-form" method="POST"
+                                action="/trips/<%= trip.trip_id %>/itinerary/add">
+                                <!-- <input type="text" class="form-control mb-2" name="activity_type"
+                                    placeholder="Activity Type" required> -->
+                                <select class="form-select mb-2" name="activity_type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Travel">Travel</option>
+                                    <option value="Activity">Activity</option>
+                                    <option value="Food">Food</option>
+                                </select>
+                                <input type="text" class="form-control mb-2" name="activity_name"
+                                    placeholder="Activity Name" required>
+                                <input type="date" class="form-control mb-2" name="activity_date" required>
+                                <input type="time" class="form-control mb-2" name="start_time" required>
 
-                    <!-- Duration (Hours & Minutes) -->
-                    <div class="row mb-2">
-                        <div class="col">
-                            <select class="form-select" id="duration_hours" name="duration_hours" required>
-                                <option value="">Hours</option>
-                                <% for (let i = 0; i <= 12; i++) { %>
-                                    <option value="<%= i %>"><%= i %> h</option>
-                                <% } %>
-                            </select>
+                                <!-- Duration (Hours & Minutes) -->
+                                <div class="row mb-2">
+                                    <div class="col">
+                                        <select class="form-select" id="duration_hours" name="duration_hours" >
+                                            <option value="">Hours</option>
+                                            <% for (let i=0; i <=12; i++) { %>
+                                                <option value="<%= i %>">
+                                                    <%= i %> h
+                                                </option>
+                                                <% } %>
+                                        </select>
+                                    </div>
+                                    <div class="col">
+                                        <select class="form-select" id="duration_minutes" name="duration_minutes"
+                                            required>
+                                            <option value="">Minutes</option>
+                                            <% for (let i=0; i <=59; i++) { %>
+                                                <option value="<%= i %>">
+                                                    <%= i %> m
+                                                </option>
+                                                <% } %>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <input type="text" class="form-control mb-2" name="location" id="locationInput"
+                                    placeholder="Location">
+                                <textarea class="form-control mb-2" name="details" placeholder="Details"></textarea>
+                                <button type="submit" class="btn btn-primary w-100">Add Activity</button>
+                            </form>
                         </div>
-                        <div class="col">
-                            <select class="form-select" id="duration_minutes" name="duration_minutes" required>
-                                <option value="">Minutes</option>
-                                <% for (let i = 0; i <= 59; i++) { %>
-                                    <option value="<%= i %>"><%= i %> m</option>
-                                <% } %>
-                            </select>
+                </div>
+
+                <!-- Activities Section with Pagination -->
+                <div class="col-md-6">
+                    <h4 class="text-center">
+                        <%= selectedDateFormatted %> Activities
+                            <a href="/trips/<%= trip.trip_id %>/calendar_itinerary"
+                                class="btn btn-light w-100 mt-2">Calendar View</a>
+                    </h4>
+
+                    <!-- Pagination -->
+                    <div class="d-flex justify-content-center">
+                        <div class="pagination-container">
+                            <ul class="pagination flex-nowrap">
+                                <% for (let i=0; i < totalDays; i++) { const date=new Date(trip.start_date);
+                                    date.setDate(date.getDate() + i); const
+                                    formattedDate=date.toLocaleDateString('en-US', { weekday: 'short' , month: 'short' ,
+                                    day: 'numeric' }); const
+                                    dateParam=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0'
+                                    )}-${String(date.getDate()).padStart(2, '0' )}`; %>
+                                    <li class="page-item <%= dateParam === selectedDate ? 'active' : '' %>">
+                                        <a class="page-link"
+                                            href="/trips/<%= trip.trip_id %>/itinerary?date=<%= dateParam %>">
+                                            <%= formattedDate %>
+                                        </a>
+                                    </li>
+                                    <% } %>
+                            </ul>
                         </div>
                     </div>
 
-                    <input type="text" class="form-control mb-2" name="location" id="locationInput" placeholder="Location">
-                    <textarea class="form-control mb-2" name="details" placeholder="Details"></textarea>
-                    <button type="submit" class="btn btn-primary w-100">Add Activity</button>
-                </form>
+                    <!-- Activities List -->
+                    <div class="list-group overflow-auto" style="height: 400px;">
+                        <% activities.forEach((activity)=> {
+                            const isEditing = edit === activity.activity_id;
+                            %>
+                            <% if (isEditing) { %>
+                                <form method="POST"
+                                    action="/trips/<%= trip.trip_id %>/itinerary/update/<%= activity.activity_id %>?date=<%= selectedDate %>">
+                                    <div class="list-group-item">
+                                        <select class="form-select mb-2" name="activity_type" required>
+                                            <%= activity.activity_name %>
+                                                <option value="Travel">Travel</option>
+                                                <option value="Activity">Activity</option>
+                                                <option value="Food">Food</option>
+                                        </select>
+                                        <input type="text" name="activity_name" value="<%= activity.activity_name %>"
+                                            class="form-control mb-2" required />
+                                        <input type="time" name="start_time" value="<%= activity.start_time %>"
+                                            class="form-control mb-2" required />
+                                        <input type="text" name="location" value="<%= activity.location %>"
+                                            class="form-control mb-2" />
+                                        <textarea name="details"
+                                            class="form-control mb-2"><%= activity.details %></textarea>
+                                        <button type="submit" class="btn btn-success btn-sm">Save</button>
+                                        <a href="/trips/<%= trip.trip_id %>/itinerary?date=<%= selectedDate %>"
+                                            class="btn btn-secondary btn-sm">Cancel</a>
+                                    </div>
+                                </form>
+                                <% } else { %>
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>
+                                                <%= activity.activity_type %>
+                                            </strong>
+                                            -
+                                            <strong>
+                                                <%= activity.activity_name %>
+                                            </strong> - <%= activity.formattedActivityDate %>
+                                                <p>
+                                                    <%= activity.start_time %> | <%= activity.location %>
+                                                </p>
+                                                <% if (activity.duration) { %>
+                                                    <p>Duration: <%= activity.duration %>
+                                                    </p>
+                                                    <% } %>
+                                        </div>
+                                        <div class="d-flex flex-column">
+                                            <% if (activity.details) { %>
+                                                <button type="button" class="btn btn-outline-info mb-2 details-btn"
+                                                    data-bs-toggle="popover" data-bs-trigger="click"
+                                                    data-bs-placement="right" title="Activity Details"
+                                                    data-bs-content="<%= activity.details %>">
+                                                    <i class="bi bi-info-circle"></i>
+                                                </button>
+                                                <% } %>
+                                                    <% if (activity.location) { %>
+                                                        <a href="https://www.google.com/maps/search/?api=1&query=<%= encodeURIComponent(activity.location) %>"
+                                                            target="_blank"
+                                                            class="btn btn-sm btn-success w-100 mb-1">📍</a>
+                                                        <% } %>
+                                                            <a href="/trips/<%= trip.trip_id %>/itinerary?edit=<%= activity.activity_id %>&date=<%= selectedDate %>"
+                                                                class="btn btn-warning btn-sm mb-1">✏️</a>
+                                                            <form method="POST"
+                                                                action="/trips/<%= trip.trip_id %>/itinerary/delete/<%= activity.activity_id %>"
+                                                                style="display:inline;">
+                                                                <button class="btn btn-danger btn-sm"
+                                                                    type="submit">🗑️</button>
+                                                            </form>
+                                        </div>
+                                    </div>
+                                    <% } %>
+                                        <% }) %>
+                    </div>
+                </div>
+
+                <!-- Accommodations & Bookings Section -->
+                <div class="col-md-3">
+                    <div class="card p-3">
+                        <h5>Accommodations & Bookings</h5>
+
+                        <% if (accommodations.length===0 && bookings.length===0) { %>
+                            <p>No accommodations or bookings for this date.</p>
+                            <% } %>
+
+                                <% accommodations.forEach(acc=> { %>
+                                    <div class="card bg-dark text-light mb-2 p-2">
+                                        <strong>
+                                            <%= acc.name %>
+                                        </strong>
+                                        <p>
+                                            <%= acc.start_date %> - <%= acc.end_date %>
+                                        </p>
+                                    </div>
+                                    <% }); %>
+
+                                        <% bookings.forEach(booking=> { %>
+                                            <div class="card bg-primary text-light mb-2 p-2">
+                                                <strong>
+                                                    <%= booking.vendor_name %>
+                                                </strong> - <%= booking.accommodation_type %>
+                                                    <p>
+                                                        <%= booking.formattedStartDate %> - <%= booking.formattedEndDate
+                                                                %>
+                                                    </p>
+                                                    <% if (booking.booking_link) { %>
+                                                        <a href="<%= booking.booking_link %>"
+                                                            class="btn btn-sm btn-light" target="_blank">View
+                                                            Booking</a>
+                                                        <% } %>
+                                                            <% if (booking.file_name) { %>
+                                                                <a href="/trips/<%= trip.trip_id %>/bookings/download/<%= booking.booking_id %>"
+                                                                    class="btn btn-sm btn-success">Download</a>
+                                                                <% } %>
+                                            </div>
+                                            <% }); %>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <!-- Activities Section with Pagination -->
-<div class="col-md-6">
-    <h4 class="text-center">
-        <%= selectedDateFormatted %> Activities
-        <a href="/trips/<%= trip.trip_id %>/calendar_itinerary" class="btn btn-light w-100 mt-2">Calendar View</a>
-    </h4>
-
-    <!-- Pagination for Itinerary Days -->
-    <!-- Pagination for Itinerary Days -->
-<div class="d-flex justify-content-center">
-    <div class="pagination-container">
-        <ul class="pagination flex-nowrap">
-            <% for (let i = 0; i < totalDays; i++) { 
-                const date = new Date(trip.start_date);
-                date.setDate(date.getDate() + i);
-                const formattedDate = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-                const dateParam = date.toISOString().split('T')[0];
-            %>
-                <li class="page-item <%= dateParam === selectedDate ? 'active' : '' %>">
-                    <a class="page-link" href="/trips/<%= trip.trip_id %>/itinerary?date=<%= dateParam %>">
-                        <%= formattedDate %>
-                    </a>
-                </li>
-            <% } %>
-        </ul>
-    </div>
-</div>
-
-    <!-- Activities List -->
-    <div class="list-group overflow-auto" style="height: 400px;">
-        <% activities.forEach((activity) => { %>
-            <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <strong><%= activity.activity_name %></strong> - <%= activity.formattedActivityDate %>
-                    <p><%= activity.start_time %> - <%= activity.end_time %> | <%= activity.location %></p>
-                    <% if (activity.duration) { %>
-                        <p>Duration: <%= activity.duration %></p>
-                    <% } %>
-                </div>
-                <div class="d-flex flex-column">
-                    <% if (activity.details) { %>
-                        <button type="button" 
-                                class="btn btn-primary mb-2 details-btn" 
-                                data-bs-toggle="popover" 
-                                data-bs-trigger="click"
-                                data-bs-placement="right"
-                                title="Activity Details"
-                                data-bs-content="<%= activity.details %>">
-                            Details
-                        </button>
-                    <% } %>
-                    <% if (activity.location) { %>
-                        <a href="https://www.google.com/maps/search/?api=1&query=<%= encodeURIComponent(activity.location) %>" 
-                           target="_blank" 
-                           class="btn btn-sm btn-success w-100">
-                            📍 Location
-                        </a>
-                    <% } %>
-                </div>
+        <div class="position-fixed bottom-0 end-0 m-3 p-3 bg-light shadow rounded" style="width: 320px; z-index: 1050;">
+            <h5>Estimate Driving Time</h5>
+            <input type="text" class="form-control mb-2" id="startEstimate" placeholder="Start Location">
+            <input type="text" class="form-control mb-2" id="endEstimate" placeholder="End Location">
+            <button id="estimateTimeBtn" class="btn btn-primary w-100 mb-2">Estimate Time</button>
+            <!-- Drive Time Result Wrapper -->
+            <div id="driveTimeResultWrapper" style="display: none;">
+                <span id="driveTimeResult" class="form-control text-center mb-2" readonly></span>
             </div>
-        <% }); %>
-    </div>
-</div>
-        
+            <button id="useEstimateBtn" class="btn btn-success w-100">Use Estimate</button>
+        </div>
 
+        <!-- Scripts -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            document.getElementById('add-activity-form').addEventListener('submit', function (event) {
+                const existingDurationInput = document.getElementById('hidden-duration-input');
+                if (existingDurationInput) existingDurationInput.remove();
 
-<!-- Accommodations & Bookings Section -->
-<div class="col-md-3">
-    <div class="card p-3">
-        <h5>Accommodations & Bookings</h5>
+                const hours = document.getElementById('duration_hours').value || 0;
+                const minutes = document.getElementById('duration_minutes').value || 0;
+                const formattedDuration = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
 
-        <% if (accommodations.length === 0 && bookings.length === 0) { %>
-            <p>No accommodations or bookings for this date.</p>
-        <% } %>
+                let durationInput = document.createElement("input");
+                durationInput.type = "hidden";
+                durationInput.id = "hidden-duration-input";
+                durationInput.name = "duration";
+                durationInput.value = formattedDuration;
 
-        <% accommodations.forEach(acc => { %>
-            <div class="card bg-dark text-light mb-2 p-2">
-                <strong><%= acc.name %></strong>
-                <p><%= acc.start_date %> - <%= acc.end_date %></p>
-            </div>
-        <% }); %>
+                this.appendChild(durationInput);
+            });
+        </script>
+        <script>
+            function initAutocomplete() {
+                let startInput = document.getElementById('startEstimate');
+                let endInput = document.getElementById('endEstimate');
+                let locationInput = document.getElementById('locationInput');
 
-        <% bookings.forEach(booking => { %>
-            <div class="card bg-primary text-light mb-2 p-2">
-                <strong><%= booking.vendor_name %></strong> - <%= booking.accommodation_type %>
-                <p><%= booking.start_date %> - <%= booking.end_date %></p>
-                <% if (booking.booking_link) { %>
-                    <a href="<%= booking.booking_link %>" class="btn btn-sm btn-light" target="_blank">View Booking</a>
-                <% } %>
-                <% if (booking.file_name) { %>
-                    <a href="/trips/<%= trip.trip_id %>/bookings/download/<%= booking.booking_id %>"
-                       class="btn btn-sm btn-success">Download</a>
-                <% } %>
-            </div>
-        <% }); %>
-    </div>
-</div>
+                new google.maps.places.Autocomplete(startInput);
+                new google.maps.places.Autocomplete(endInput);
+                new google.maps.places.Autocomplete(locationInput);
+            }
 
-    <!-- 🚗 Driving Time Estimator (Fixed Bottom-Right) -->
-<div class="position-fixed bottom-0 end-0 m-3 p-3 bg-light shadow rounded" style="width: 320px; z-index: 1050;">
-    <h5>Estimate Driving Time</h5>
-    <input type="text" class="form-control mb-2 pac-target-input" id="startEstimate" placeholder="Start Location">
-    <input type="text" class="form-control mb-2 pac-target-input" id="endEstimate" placeholder="End Location">
-    <button id="estimateTimeBtn" class="btn btn-primary w-100 mb-2">Estimate Time</button>
-    <span id="driveTimeResult" class="form-control text-center mb-2" readonly></span>
-    <button id="useEstimateBtn" class="btn btn-success w-100">Use Estimate</button>
-</div>
+            function adjustAutocompletePosition() {
+                document.querySelectorAll('.pac-container').forEach(container => {
+                    container.style.zIndex = "1051";
+                    container.style.position = "absolute";
+                });
+            }
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // ✅ Combine duration correctly before form submission
-    // ✅ Combine duration in proper TIME format before form submission
-document.getElementById('add-activity-form').addEventListener('submit', function (event) {
-    const existingDurationInput = document.getElementById('hidden-duration-input');
-    if (existingDurationInput) existingDurationInput.remove();
+            google.maps.event.addDomListener(window, 'load', initAutocomplete);
+            document.addEventListener('focus', adjustAutocompletePosition, true);
+        </script>
+        <script>
+            document.getElementById('estimateTimeBtn').addEventListener('click', async function () {
+                const start = document.getElementById('startEstimate').value;
+                const end = document.getElementById('endEstimate').value;
 
-    const hours = document.getElementById('duration_hours').value || 0;
-    const minutes = document.getElementById('duration_minutes').value || 0;
+                // Hide result before fetch
+                document.getElementById('driveTimeResultWrapper').style.display = "none";
 
-    // ✅ Convert to HH:MM:SS format for MySQL TIME
-    const formattedDuration = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+                if (!start || !end) return alert("Please provide both locations.");
 
-    let durationInput = document.createElement("input");
-    durationInput.type = "hidden";
-    durationInput.id = "hidden-duration-input";
-    durationInput.name = "duration";
-    durationInput.value = formattedDuration;
+                const response = await fetch(`/trips/<%= trip.trip_id %>/estimate-drive-time`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ start, end })
+                });
 
-    this.appendChild(durationInput);
+                const data = await response.json();
 
-    console.log(`✅ Duration formatted for MySQL: ${formattedDuration}`);  // e.g., "01:02:00"
-});
-</script>
+                if (data.duration) {
+                    document.getElementById('driveTimeResult').innerText = `Estimated Driving Time: ${data.duration}`;
+                    document.getElementById('useEstimateBtn').dataset.duration = data.duration;
+                    document.getElementById('driveTimeResultWrapper').style.display = "block"; // ✅ Show result
+                } else {
+                    document.getElementById('driveTimeResult').innerText = "❌ Unable to calculate driving time.";
+                    document.getElementById('driveTimeResultWrapper').style.display = "block"; // Still show error
+                }
+            });
 
-<script>
-    // Google Places Autocomplete
-    // 🗺️ Initialize Google Places Autocomplete for Inputs
-function initAutocomplete() {
-    console.log("✅ Initializing Google Places Autocomplete...");
+            document.getElementById('useEstimateBtn').addEventListener('click', function () {
+                const durationText = this.dataset.duration;
+                if (!durationText) return alert("Please estimate time first.");
 
-    if (!window.google || !google.maps || !google.maps.places) {
-        console.error("❌ Google Places API is not loaded.");
-        return;
-    }
+                const hoursMatch = durationText.match(/(\d+)\s*hour/);
+                const minutesMatch = durationText.match(/(\d+)\s*min/);
 
-    let startInput = document.getElementById('startEstimate');
-    let endInput = document.getElementById('endEstimate');
-    let locationInput = document.getElementById('locationInput'); 
+                const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
+                const minutes = minutesMatch ? parseInt(minutesMatch[1], 10) : 0;
 
-    new google.maps.places.Autocomplete(startInput);
-    new google.maps.places.Autocomplete(endInput);
-    new google.maps.places.Autocomplete(locationInput);
-
-    console.log("✨ Google Places API initialized successfully.");
-}
-
-// 🔽 Fix Dropdown Positioning
-function adjustAutocompletePosition() {
-    let autocompleteContainers = document.querySelectorAll('.pac-container');
-    autocompleteContainers.forEach(container => {
-        container.style.zIndex = "1051";  // Ensure it appears above other elements
-        container.style.position = "absolute";
-    });
-}
-
-// 🌍 Ensure Places API Works
-google.maps.event.addDomListener(window, 'load', initAutocomplete);
-document.addEventListener('focus', adjustAutocompletePosition, true);
-    // google.maps.event.addDomListener(window, 'load', initAutocomplete);
-
-    // 🚀 Fetch Driving Time from Google Maps API
-// 🌐 Fetch Driving Time from Google Maps API
-document.getElementById('estimateTimeBtn').addEventListener('click', async function() {
-    const start = document.getElementById('startEstimate').value;
-    const end = document.getElementById('endEstimate').value;
-
-    if (!start || !end) return alert("Please provide both locations.");
-
-    const response = await fetch(`/trips/<%= trip.trip_id %>/estimate-drive-time`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ start, end })
-    });
-
-    const data = await response.json();
-
-    if (data.duration) {
-        console.log(`✅ Duration received: ${data.duration}`);
-        document.getElementById('driveTimeResult').innerText = `Estimated Driving Time: ${data.duration}`;
-
-        // Store duration in a temporary variable for "Use Estimate" button
-        document.getElementById('useEstimateBtn').dataset.duration = data.duration;
-    } else {
-        document.getElementById('driveTimeResult').innerText = "❌ Unable to calculate driving time.";
-    }
-});
-
-// ⏱️ Insert Duration After Clicking "Use Estimate"
-document.getElementById('useEstimateBtn').addEventListener('click', function() {
-    const durationText = this.dataset.duration;
-    if (!durationText) return alert("Please estimate time first.");
-
-    // 📝 Extract hours and minutes from the estimated time
-    const hoursMatch = durationText.match(/(\d+)\s*hour/);
-    const minutesMatch = durationText.match(/(\d+)\s*min/);
-
-    const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
-    const minutes = minutesMatch ? parseInt(minutesMatch[1], 10) : 0;
-
-    console.log(`⏳ Hours: ${hours}, Minutes: ${minutes}`);
-
-    // 🖊️ Populate the form fields
-    document.getElementById('duration_hours').value = hours;
-    document.getElementById('duration_minutes').value = minutes;
-});
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        console.log("✅ DOM Loaded - Initializing popovers..."); // Debug line
-        const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
-        console.log(`🔎 Found ${popoverTriggerList.length} popover elements.`); // Debug line
-        const popoverList = [...popoverTriggerList].map(popoverTriggerEl => 
-            new bootstrap.Popover(popoverTriggerEl, {
-                trigger: 'click',
-                html: true,
-                sanitize: false, // Allow HTML in details if needed
-                placement: 'right'
-            })
-        );
-        console.log("✨ Popover initialization complete."); // Debug line
-    });
-</script>
+                document.getElementById('duration_hours').value = hours;
+                document.getElementById('duration_minutes').value = minutes;
+            });
+        </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+                [...popoverTriggerList].map(popoverTriggerEl =>
+                    new bootstrap.Popover(popoverTriggerEl, {
+                        trigger: 'click', html: true, sanitize: false, placement: 'right'
+                    })
+                );
+            });
+        </script>
+        <!-- 🚗 Driving Time Estimator (Fixed Bottom-Right) -->
 
 </body>
+
 </html>

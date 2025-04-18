@@ -102,7 +102,7 @@ router.post('/:trip_id/edit', checkTripAccess("editor"), (req, res) => {
 router.post('/:trip_id/share', checkTripAccess("owner"), (req, res) => {
     const { trip_id } = req.params;
     const { user_email, role } = req.body;
-    
+
     const getUserSql = "SELECT user_id FROM users WHERE email = ?";
     const insertShareSql = "INSERT INTO trip_users (trip_id, user_id, role) VALUES (?, ?, ?)";
 
@@ -123,9 +123,9 @@ router.post('/:trip_id/share', checkTripAccess("owner"), (req, res) => {
 router.post('/:trip_id/share/update', checkTripAccess("owner"), (req, res) => {
     const { trip_id } = req.params;
     const { user_id, role } = req.body;
-    
+
     const updateRoleSql = "UPDATE trip_users SET role = ? WHERE trip_id = ? AND user_id = ?";
-    
+
     db.query(updateRoleSql, [role, trip_id, user_id], (err) => {
         if (err) return res.status(500).send("Failed to update role.");
         res.redirect(`/trips/${trip_id}/manage-sharing`);
@@ -136,9 +136,9 @@ router.post('/:trip_id/share/update', checkTripAccess("owner"), (req, res) => {
 router.post('/:trip_id/share/remove', checkTripAccess("owner"), (req, res) => {
     const { trip_id } = req.params;
     const { user_id } = req.body;
-    
+
     const deleteUserSql = "DELETE FROM trip_users WHERE trip_id = ? AND user_id = ?";
-    
+
     db.query(deleteUserSql, [trip_id, user_id], (err) => {
         if (err) return res.status(500).send("Failed to remove user.");
         res.redirect(`/trips/${trip_id}/manage-sharing`);
@@ -148,7 +148,7 @@ router.post('/:trip_id/share/remove', checkTripAccess("owner"), (req, res) => {
 // Route to Delete Trip
 router.post('/:trip_id/delete', checkTripAccess("owner"), (req, res) => {
     const { trip_id } = req.params;
-    
+
     const deleteTripSql = "DELETE FROM trips WHERE trip_id = ?";
 
     db.query(deleteTripSql, [trip_id], (err) => {
@@ -193,14 +193,14 @@ router.get('/:trip_id/budget', checkTripAccess("viewer"), (req, res) => {
 
                 const expenseAmount = parseFloat(expense.amount) || 0.00;
 
-                summary.byCategory[expense.category] = 
+                summary.byCategory[expense.category] =
                     (summary.byCategory[expense.category] || 0) + expenseAmount;
 
-                summary.byDate[expense.formattedDate] = 
+                summary.byDate[expense.formattedDate] =
                     (summary.byDate[expense.formattedDate] || 0) + expenseAmount;
             });
 
-            res.render('pages/budget', { 
+            res.render('pages/budget', {
                 user: req.session.user || { username: "Guest" },
                 trip,
                 expenses,
@@ -254,11 +254,11 @@ router.post('/:trip_id/budget/add', (req, res) => {
                 expense.formattedDate = new Date(expense.expense_date).toLocaleDateString('en-US', options);
 
                 // 🏷️ Grouping by Category
-                summary.byCategory[expense.category] = 
+                summary.byCategory[expense.category] =
                     (summary.byCategory[expense.category] || 0) + expense.amount;
 
                 // 📅 Grouping by Date
-                summary.byDate[expense.formattedDate] = 
+                summary.byDate[expense.formattedDate] =
                     (summary.byDate[expense.formattedDate] || 0) + expense.amount;
             });
 
@@ -377,9 +377,9 @@ router.get('/:trip_id/packing_list', (req, res) => {
             const packedItems = items.filter(item => item.packed).length;
             const progress = totalItems ? (packedItems / totalItems) * 100 : 0;
             // 🎯 Format trip start & end dates
-        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-        trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
-        trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
+            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
+            trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
 
             res.render('pages/packing_list', { trip, packingList: items, progress: Math.round(progress), apiKey: process.env.GOOGLE_API_KEY });
         });
@@ -420,14 +420,18 @@ router.get('/:trip_id/itinerary', (req, res) => {
         trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
 
         // ✅ If no date is selected, default to the first date of the trip
-        let selectedDate = req.query.date || new Date(trip.start_date).toISOString().split('T')[0];
-        let selectedDateFormatted = new Date(selectedDate).toLocaleDateString('en-US', options);
+        const selectedDateRaw = req.query.date || trip.start_date.toISOString().split('T')[0];
+        const [year, month, day] = selectedDateRaw.split('-').map(Number);
+        const selectedDateObj = new Date(year, month - 1, day);
+        const selectedDateFormatted = selectedDateObj.toLocaleDateString('en-US', options);
+        const selectedDate = selectedDateRaw; // Keep original string for comparison in EJS
 
         // ✅ Generate trip dates for pagination
         const tripDates = [];
         const startDate = new Date(trip.start_date);
         const endDate = new Date(trip.end_date);
         const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const edit = parseInt(req.query.edit) || null;
 
         let currentDate = new Date(trip.start_date);
         while (currentDate <= endDate) {
@@ -450,15 +454,20 @@ router.get('/:trip_id/itinerary', (req, res) => {
 
                 db.query(bookingsSql, [trip_id, selectedDate, selectedDate], (err, bookingsResult) => {
                     if (err) return res.status(500).send("❌ Failed to fetch bookings.");
+                    bookingsResult.forEach(booking => {
+                        booking.formattedStartDate = new Date(booking.start_date).toLocaleDateString('en-US', options);
+                        booking.formattedEndDate = new Date(booking.end_date).toLocaleDateString('en-US', options);
+                    });
 
                     res.render('pages/itinerary', {
                         user: req.session.user || { username: "Guest" },
                         trip,
                         tripDates,
                         totalDays,
+                        edit,
                         activities: activitiesResult,
                         accommodations: accommodationsResult,
-                        bookings: bookingsResult,  // ✅ Added bookings
+                        bookings: bookingsResult,
                         selectedDate,
                         selectedDateFormatted,
                         apiKey: process.env.GOOGLE_API_KEY
@@ -474,7 +483,7 @@ router.post('/:trip_id/itinerary/add', (req, res) => {
     const { trip_id } = req.params;
     const { activity_type, activity_name, activity_date, start_time, duration, location, details } = req.body;
 
-    console.log(`✅ Duration received: ${duration}`); // Debugging line
+    console.log(`✅ Duration received: ${duration}`);
 
     const sql = `
         INSERT INTO itinerary 
@@ -488,32 +497,43 @@ router.post('/:trip_id/itinerary/add', (req, res) => {
             return res.status(500).send("❌ Failed to add activity.");
         }
         console.log("✅ Activity added successfully");
-
-        // ✅ Redirect to the itinerary page, ensuring we view the date the activity was added for
         res.redirect(`/trips/${trip_id}/itinerary?date=${activity_date}`);
     });
 });
 
-// ✏️ Update Existing Activity
-router.put('/:trip_id/itinerary/edit/:activity_id', (req, res) => {
+// Update Itinerary Item (POST)
+router.post('/:trip_id/itinerary/update/:activity_id', (req, res) => {
     const { trip_id, activity_id } = req.params;
-    const { name, date, time, duration, location, details } = req.body;
-    const sql = "UPDATE itinerary SET activity_name = ?, activity_date = ?, start_time = ?, duration = ?, location = ?, details = ? WHERE trip_id = ? AND activity_id = ?";
-
-    db.query(sql, [name, date, time, duration, location, details, trip_id, activity_id], (err) => {
-        if (err) return res.status(500).send("❌ Failed to update activity.");
-        res.sendStatus(200);
+    const { activity_type, activity_name, start_time, location, details } = req.body;
+  
+    const updateSql = `
+      UPDATE itinerary 
+      SET activity_type = ?, activity_name = ?, start_time = ?, location = ?, details = ?
+      WHERE trip_id = ? AND activity_id = ?
+    `;
+  
+    db.query(updateSql, [activity_type, activity_name, start_time, location, details, trip_id, activity_id], (err) => {
+      if (err) {
+        console.error("❌ Failed to update activity:", err);
+        return res.status(500).send("❌ Failed to update activity.");
+      }
+  
+      const redirectDate = req.query.date || new Date().toISOString().split('T')[0];
+      res.redirect(`/trips/${trip_id}/itinerary?date=${redirectDate}`);
     });
-});
+  });
 
-// 🗑️ Delete Activity
-router.delete('/:trip_id/itinerary/delete/:activity_id', (req, res) => {
+// 🗑️ Delete Activity (Form-based POST)
+router.post('/:trip_id/itinerary/delete/:activity_id', (req, res) => {
     const { trip_id, activity_id } = req.params;
+    const redirectDate = req.body.date;
+
     db.query("DELETE FROM itinerary WHERE trip_id = ? AND activity_id = ?", [trip_id, activity_id], (err) => {
         if (err) return res.status(500).send("❌ Failed to delete activity.");
-        res.sendStatus(200);
+        res.redirect(`/trips/${trip_id}/itinerary?date=${redirectDate}`);
     });
 });
+
 //estimate drive time route
 
 router.post('/:trip_id/estimate-drive-time', async (req, res) => {
@@ -553,10 +573,10 @@ router.post('/:trip_id/estimate-drive-time', async (req, res) => {
 router.get('/:trip_id/calendar_itinerary', (req, res) => {
     const { trip_id } = req.params;
     const apiKey = process.env.GOOGLE_API_KEY;
-    
+
     const tripSql = "SELECT * FROM trips WHERE trip_id = ?";
     const activitiesSql = "SELECT *, DATE_FORMAT(activity_date, '%Y-%m-%d') AS formatted_activity_date FROM itinerary WHERE trip_id = ? ORDER BY activity_date ASC";
-    const details  = activitiesSql.details;
+    const details = activitiesSql.details;
 
     db.query(tripSql, [trip_id], (err, tripResult) => {
         if (err || tripResult.length === 0) {
@@ -569,7 +589,7 @@ router.get('/:trip_id/calendar_itinerary', (req, res) => {
         trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
         trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
 
-        db.query(activitiesSql,  [trip_id],  (err, activitiesResult) => {
+        db.query(activitiesSql, [trip_id], (err, activitiesResult) => {
             if (err) return res.status(500).send("Failed to fetch activities.");
 
             // Ensure activity dates are correctly formatted
@@ -620,7 +640,12 @@ router.post('/:trip_id/bookings/upload', upload.single('bookingFile'), (req, res
 // ✍️ Route to Add a Booking (With File Upload Support)
 router.post('/:trip_id/bookings/add', upload.single('bookingFile'), (req, res) => {
     const { trip_id } = req.params;
-    const { accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link } = req.body;
+    let { accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link } = req.body;
+
+    // Convert blank dates to null
+    if (!end_date || end_date.trim() === '') {
+        end_date = null;
+    }
 
     let file_name = null;
     let original_name = null;
@@ -631,7 +656,8 @@ router.post('/:trip_id/bookings/add', upload.single('bookingFile'), (req, res) =
     }
 
     const sql = `
-        INSERT INTO bookings (trip_id, accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name, original_name) 
+        INSERT INTO bookings 
+        (trip_id, accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name, original_name) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
@@ -647,23 +673,36 @@ router.post('/:trip_id/bookings/add', upload.single('bookingFile'), (req, res) =
 // Retrieve bookings for a trip
 router.get('/:trip_id/bookings', (req, res) => {
     const { trip_id } = req.params;
-    const tripQuery = "SELECT * FROM trips WHERE trip_id = ?";
-    const bookingsQuery = "SELECT * FROM bookings WHERE trip_id = ?";
     const edit = req.query.edit || null;
 
+    const tripQuery = "SELECT * FROM trips WHERE trip_id = ?";
+    const bookingsQuery = `
+  SELECT *, 
+         DATE_FORMAT(start_date, '%Y-%m-%d') AS formatted_start_date,
+         DATE_FORMAT(end_date, '%Y-%m-%d') AS formatted_end_date
+  FROM bookings 
+  WHERE trip_id = ?
+`;
+
+    // First, fetch trip
     db.query(tripQuery, [trip_id], (err, tripResults) => {
-        if (err || tripResults.length === 0) return res.status(404).send("Trip not found.");
+        if (err || tripResults.length === 0) {
+            return res.status(404).send("Trip not found.");
+        }
+
         const trip = tripResults[0];
 
-         // 🎯 Format trip dates
-    const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-    trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
-    trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
-    
+        // Format trip dates
+        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+        trip.formattedStartDate = new Date(trip.start_date).toLocaleDateString('en-US', options);
+        trip.formattedEndDate = new Date(trip.end_date).toLocaleDateString('en-US', options);
 
+        // Now fetch bookings
         db.query(bookingsQuery, [trip_id], (err, bookings) => {
             if (err) return res.status(500).send("Failed to retrieve bookings.");
-            res.render('pages/bookings', { trip, bookings, apiKey: process.env.GOOGLE_API_KEY, edit });
+            const safeEndDate = bookings.end_date && bookings.end_date.trim() !== '' ? bookings.end_date : null;
+
+            res.render('pages/bookings', { trip, bookings, safeEndDate, apiKey: process.env.GOOGLE_API_KEY, edit });
         });
     });
 });
@@ -671,7 +710,11 @@ router.get('/:trip_id/bookings', (req, res) => {
 // Update booking entry
 router.post('/:trip_id/bookings/update/:booking_id', (req, res) => {
     const { trip_id, booking_id } = req.params;
-    const { accommodation_type, vendor_name, start_date, end_date } = req.body;
+    let { accommodation_type, vendor_name, start_date, end_date } = req.body;
+
+    if (!end_date || end_date.trim() === '') {
+        end_date = null;
+    }
 
     const updateSql = `
         UPDATE bookings 
