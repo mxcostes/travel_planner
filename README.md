@@ -34,7 +34,7 @@ Kosmos is a web-based travel planning tool designed to reduce the stress of orga
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/kosmos.git
+git clone https://github.com/mxcostes/travel_planner
 cd kosmos
 ```
 
