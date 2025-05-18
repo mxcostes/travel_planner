@@ -4,48 +4,43 @@ const path = require('path');
 const methodOverride = require('method-override');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const { pool, db } = require('./config/db');
+
 const MySQLStore = require('express-mysql-session')(session);
-const db = require('./config/db'); // MySQL connection
 
 const app = express();
 const PORT = process.env.PORT || 3307;
 
 const sessionStore = new MySQLStore({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-});
-
-app.use(session({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  }, pool);
+  
+  app.use(session({
+    key: 'kosmos_sid',
     secret: process.env.SESSION_SECRET || 'some_default_secret',
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 }
+    cookie: {
+      secure: false, // Set to true if using HTTPS
+      maxAge: 1000 * 60 * 60 * 24
+    }
   }));
-
-// app.use(session({
-//   key: 'kosmos_sid',
-//   secret: process.env.SESSION_SECRET || 'some_default_secret',
-//   store: sessionStore,
-//   resave: false,
-//   saveUninitialized: false,
-//   cookie: {
-//     secure: false, // Set to true if using HTTPS
-//     maxAge: 1000 * 60 * 60 * 24 // 1 day
-//   }
-// }));
-
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
+
+
+// Set EJS as the templating engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
 
 
 const tripsRoutes = require('./routes/trips'); // Routes for trips
@@ -77,9 +72,6 @@ app.use((req, res, next) => {
 // Set static folder (for CSS, JS, Images)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Set EJS as the templating engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 
 // Routes
 app.use('/trips', tripsRoutes);
