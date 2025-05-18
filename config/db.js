@@ -12,13 +12,13 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-db.connect((err) => {
-    if (err) {
-        console.error('❌ MySQL Connection Error:', err);
-        process.exit(1);
-    }
-    console.log('✅ Connected to MySQL Database');
-});
+// db.connect((err) => {
+//     if (err) {
+//         console.error('❌ MySQL Connection Error:', err);
+//         process.exit(1);
+//     }
+//     console.log('✅ Connected to MySQL Database');
+// });
 
 module.exports = db.promise();
 
