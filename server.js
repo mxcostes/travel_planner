@@ -5,18 +5,48 @@ const methodOverride = require('method-override');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const db = require('./config/db'); // Import MySQL connection
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
+
+const app = express();
+const PORT = process.env.PORT || 3307;
+
+const sessionStore = new MySQLStore({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT || 3306,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
+});
+
+app.use(session({
+  key: 'kosmos_sid',
+  secret: process.env.SESSION_SECRET || 'some_default_secret',
+  store: sessionStore,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true if using HTTPS
+    maxAge: 1000 * 60 * 60 * 24 // 1 day
+  }
+}));
+
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(methodOverride('_method'));
+app.use(express.static(path.join(__dirname, 'public')));
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+
 
 const tripsRoutes = require('./routes/trips'); // Routes for trips
 const usersRoutes = require('./routes/users'); // Routes for users
 const authRoutes = require('./routes/auth');
 
-const app = express();
-const PORT = process.env.PORT || 3307;
 
-// Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use(methodOverride('_method')); // Allows PUT & DELETE in forms
 
 
 
