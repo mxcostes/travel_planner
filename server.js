@@ -4,9 +4,8 @@ const path = require('path');
 const methodOverride = require('method-override');
 const bodyParser = require('body-parser');
 const session = require('express-session');
-const db = require('./config/db'); // Import MySQL connection
-// const session = require('express-session');
-// const MySQLStore = require('express-mysql-session')(session);
+const MySQLStore = require('express-mysql-session')(session);
+const db = require('./config/db'); // MySQL connection
 
 const app = express();
 const PORT = process.env.PORT || 3307;
@@ -58,12 +57,12 @@ const authRoutes = require('./routes/auth');
 
 
 // Set up session (for authentication)
-app.use(session({
-    secret: 'your_secret_key',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false } // Change to `true` in production with HTTPS
-}));
+// app.use(session({
+//     secret: 'your_secret_key',
+//     resave: false,
+//     saveUninitialized: true,
+//     cookie: { secure: false } // Change to `true` in production with HTTPS
+// }));
 
 // Middleware to make GOOGLE_API_KEY available in all views
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
