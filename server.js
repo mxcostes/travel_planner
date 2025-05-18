@@ -17,7 +17,7 @@ const sessionStore = new MySQLStore({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME
-  }, pool);
+  });
   
   app.use(session({
     key: 'kosmos_sid',
@@ -69,16 +69,11 @@ app.use((req, res, next) => {
     next();
 });
 
-// Set static folder (for CSS, JS, Images)
-app.use(express.static(path.join(__dirname, 'public')));
-
-
 // Routes
 app.use('/trips', tripsRoutes);
 app.use('/users', usersRoutes);
 app.use('/auth', authRoutes);
 
-// Homepage Route
 // Homepage Route
 app.get('/', (req, res) => {
     if (!req.session.user || !req.session.user.id) {

@@ -21,7 +21,7 @@ router.post('/signup', async (req, res) => {
 
         const sql = "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)";
         await db.query(sql, [username, email, hashedPassword]);
-
+        
         res.redirect('/auth/login');
     } catch (err) {
         console.error(err);
@@ -58,6 +58,7 @@ router.post('/login', async (req, res) => {
         }
 
         req.session.user = { id: user.user_id, username: user.username };
+        console.log("✅ Logged in user:", req.session.user);
         res.redirect('/');
     } catch (err) {
         console.error(err);
