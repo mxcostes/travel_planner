@@ -5,8 +5,8 @@ const methodOverride = require('method-override');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const db = require('./config/db'); // Import MySQL connection
-const session = require('express-session');
-const MySQLStore = require('express-mysql-session')(session);
+// const session = require('express-session');
+// const MySQLStore = require('express-mysql-session')(session);
 
 const app = express();
 const PORT = process.env.PORT || 3307;
@@ -20,16 +20,23 @@ const sessionStore = new MySQLStore({
 });
 
 app.use(session({
-  key: 'kosmos_sid',
-  secret: process.env.SESSION_SECRET || 'some_default_secret',
-  store: sessionStore,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // Set to true if using HTTPS
-    maxAge: 1000 * 60 * 60 * 24 // 1 day
-  }
-}));
+    secret: process.env.SESSION_SECRET || 'some_default_secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 }
+  }));
+
+// app.use(session({
+//   key: 'kosmos_sid',
+//   secret: process.env.SESSION_SECRET || 'some_default_secret',
+//   store: sessionStore,
+//   resave: false,
+//   saveUninitialized: false,
+//   cookie: {
+//     secure: false, // Set to true if using HTTPS
+//     maxAge: 1000 * 60 * 60 * 24 // 1 day
+//   }
+// }));
 
 
 // Middleware
@@ -226,6 +233,4 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
 
-// app.listen(3000, '0.0.0.0', () => {
-//     console.log("Server running on port 3000");
-//   });
+
