@@ -15,13 +15,10 @@ const PORT = process.env.PORT || 3307;
 // so Express needs this to know the original request was HTTPS.
 app.set('trust proxy', 1);
 
-const sessionStore = new MySQLStore({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-  });
+// Reuse the same pool as config/db.js (which already knows how to fall back
+// to Railway's MYSQLHOST-style vars) instead of building a second,
+// independently-configured connection that can silently drift out of sync.
+const sessionStore = new MySQLStore({}, db);
   
   app.use(session({
     key: 'kosmos_sid',

@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const upload = require('../config/multer');
-const path = require('path');
+const s3 = require('../config/r2');
+const { GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const axios = require('axios');
 const checkTripAccess = require('../middleware/tripAccess'); // Import middleware
 require('dotenv').config();
@@ -609,7 +611,7 @@ router.get('/:trip_id/calendar_itinerary', async (req, res) => {
 // Upload booking PDF
 router.post('/:trip_id/bookings/upload', upload.single('bookingFile'), async (req, res) => {
     const { trip_id } = req.params;
-    const { filename, originalname } = req.file;
+    const { key: filename, originalname } = req.file;
 
     const sql = "INSERT INTO bookings (trip_id, file_name, original_name) VALUES (?, ?, ?)";
     try {
@@ -636,7 +638,7 @@ router.post('/:trip_id/bookings/add', upload.single('bookingFile'), async (req, 
     let original_name = null;
 
     if (req.file) {
-        file_name = req.file.filename;
+        file_name = req.file.key;
         original_name = req.file.originalname;
     }
 
@@ -724,8 +726,14 @@ router.get('/:trip_id/bookings/download/:booking_id', async (req, res) => {
     try {
         const [results] = await db.query(sql, [booking_id]);
         if (results.length === 0) return res.status(404).send("File not found.");
-        const filePath = path.join(__dirname, '../uploads/bookings', results[0].file_name);
-        res.download(filePath, results[0].original_name);
+
+        const command = new GetObjectCommand({
+            Bucket: process.env.R2_BUCKET,
+            Key: results[0].file_name,
+            ResponseContentDisposition: `attachment; filename="${results[0].original_name}"`
+        });
+        const url = await getSignedUrl(s3, command, { expiresIn: 300 });
+        res.redirect(url);
     } catch (err) {
         console.error("❌ Failed to download booking:", err);
         res.status(404).send("File not found.");

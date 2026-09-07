@@ -1,12 +1,12 @@
 const multer = require('multer');
-const path = require('path');
+const multerS3 = require('multer-s3');
+const s3 = require('./r2');
 
-// Storage config
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/bookings'); // Ensure this directory exists
-    },
-    filename: function (req, file, cb) {
+// Storage config: booking PDFs go straight to the R2 bucket
+const storage = multerS3({
+    s3,
+    bucket: process.env.R2_BUCKET,
+    key: function (req, file, cb) {
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
