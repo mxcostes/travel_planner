@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 function checkTripAccess(requiredRole) {
-    return (req, res, next) => {
+    return async (req, res, next) => {
         const { trip_id } = req.params;
         const userId = req.session.user?.id;
 
@@ -10,12 +10,9 @@ function checkTripAccess(requiredRole) {
         }
 
         const sql = "SELECT role FROM trip_users WHERE trip_id = ? AND user_id = ?";
-        
-        db.query(sql, [trip_id, userId], (err, results) => {
-            if (err) {
-                console.error("❌ Database error:", err);
-                return res.status(500).send("Database error.");
-            }
+
+        try {
+            const [results] = await db.query(sql, [trip_id, userId]);
 
             if (results.length === 0) {
                 return res.status(403).send("Access denied: You are not a participant in this trip.");
@@ -29,7 +26,10 @@ function checkTripAccess(requiredRole) {
             }
 
             next();
-        });
+        } catch (err) {
+            console.error("❌ Database error:", err);
+            res.status(500).send("Database error.");
+        }
     };
 }
 

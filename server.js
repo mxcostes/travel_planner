@@ -4,12 +4,16 @@ const path = require('path');
 const methodOverride = require('method-override');
 const bodyParser = require('body-parser');
 const session = require('express-session');
-const { pool, db } = require('./config/db');
+const db = require('./config/db');
 
 const MySQLStore = require('express-mysql-session')(session);
 
 const app = express();
 const PORT = process.env.PORT || 3307;
+
+// Railway (and most PaaS hosts) terminate TLS at a proxy in front of the app,
+// so Express needs this to know the original request was HTTPS.
+app.set('trust proxy', 1);
 
 const sessionStore = new MySQLStore({
     host: process.env.DB_HOST,
@@ -26,7 +30,7 @@ const sessionStore = new MySQLStore({
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true if using HTTPS
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 1000 * 60 * 60 * 24
     }
   }));
@@ -44,7 +48,6 @@ app.set('views', path.join(__dirname, 'views'));
 
 
 const tripsRoutes = require('./routes/trips'); // Routes for trips
-const usersRoutes = require('./routes/users'); // Routes for users
 const authRoutes = require('./routes/auth');
 
 
@@ -71,11 +74,10 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/trips', tripsRoutes);
-app.use('/users', usersRoutes);
 app.use('/auth', authRoutes);
 
 // Homepage Route
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
     if (!req.session.user || !req.session.user.id) {
         return res.redirect('/auth/login'); // Ensure the user is logged in
     }
@@ -84,7 +86,7 @@ app.get('/', (req, res) => {
     const today = new Date().toISOString().split('T')[0]; // 🔥 Ensures YYYY-MM-DD format
 
     const tripsSql = `
-        SELECT t.*, s.role, 
+        SELECT t.*, s.role,
         DATE_FORMAT(t.start_date, '%Y-%m-%d') AS formatted_start_date,
         DATE_FORMAT(t.end_date, '%Y-%m-%d') AS formatted_end_date
         FROM trips t
@@ -93,31 +95,28 @@ app.get('/', (req, res) => {
         ORDER BY t.start_date ASC
     `;
 
-    db.query(tripsSql, [userId], (err, trips) => {
-        if (err) {
-            console.error("❌ Failed to fetch trips:", err);
-            return res.status(500).send("Database error fetching trips.");
-        }
-    
+    try {
+        const [trips] = await db.query(tripsSql, [userId]);
+
         const pastTrips = [];
         const upcomingTrips = [];
         const unscheduledTrips = [];
         const sharedTrips = [];
         let nextTrip = null;
-    
+
         const seenTripIds = new Set(); // 🔹 Prevent duplicates in non-shared lists
-    
+
         trips.forEach(trip => {
             const startDate = trip.formatted_start_date;
             const endDate = trip.formatted_end_date;
             const isShared = trip.role && trip.role !== 'owner'; // ✅ Only trips where user is NOT the owner are shared
-    
+
             if (isShared) {
                 sharedTrips.push(trip); // ✅ Always push shared trips
-            } else if (!seenTripIds.has(trip.trip_id)) { 
+            } else if (!seenTripIds.has(trip.trip_id)) {
                 // ✅ Avoid duplicate entries for owned trips
                 seenTripIds.add(trip.trip_id);
-    
+
                 if (!startDate || !endDate) {
                     unscheduledTrips.push(trip);
                 } else if (endDate < today) {
@@ -130,30 +129,33 @@ app.get('/', (req, res) => {
                 }
             }
         });
-    
+
         // 🔹 Console log trip names within each bucket
         console.log("\n📌 Past Trips:");
         pastTrips.forEach(trip => console.log(`   - ${trip.trip_name}`));
-    
+
         console.log("\n📌 Upcoming Trips:");
         upcomingTrips.forEach(trip => console.log(`   - ${trip.trip_name}`));
-    
+
         console.log("\n📌 Unscheduled Trips:");
         unscheduledTrips.forEach(trip => console.log(`   - ${trip.trip_name}`));
-    
+
         console.log("\n📌 Shared Trips:");
         sharedTrips.forEach(trip => console.log(`   - ${trip.trip_name}`));
-    
-        res.render('pages/dashboard', { 
+
+        res.render('pages/dashboard', {
             user: req.session.user,
             trips: { pastTrips, upcomingTrips, unscheduledTrips, sharedTrips },
             nextTrip
         });
-    });
+    } catch (err) {
+        console.error("❌ Failed to fetch trips:", err);
+        res.status(500).send("Database error fetching trips.");
+    }
 });
 
 // Dashboard Route - consider deleting
-app.get('/dashboard', (req, res) => {
+app.get('/dashboard', async (req, res) => {
     if (!req.session.user || !req.session.user.id) {
         return res.redirect('/auth/login'); // Ensure the user is logged in
     }
@@ -172,11 +174,8 @@ app.get('/dashboard', (req, res) => {
         ORDER BY start_date ASC
     `;
 
-    db.query(tripsSql, [userId], (err, trips) => {
-        if (err) {
-            console.error("❌ Failed to fetch trips:", err);
-            return res.status(500).send("Database error fetching trips.");
-        }
+    try {
+        const [trips] = await db.query(tripsSql, [userId]);
 
         const pastTrips = [];
         const upcomingTrips = [];
@@ -198,12 +197,15 @@ app.get('/dashboard', (req, res) => {
             }
         });
 
-        res.render('pages/dashboard', { 
+        res.render('pages/dashboard', {
             user: req.session.user,
             trips: { pastTrips, upcomingTrips, unscheduledTrips, sharedTrips },
             nextTrip
         });
-    });
+    } catch (err) {
+        console.error("❌ Failed to fetch trips:", err);
+        res.status(500).send("Database error fetching trips.");
+    }
 });
 
 //create trip route

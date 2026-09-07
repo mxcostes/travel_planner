@@ -11,7 +11,7 @@ router.get('/signup', (req, res) => {
 // Handle Sign Up Form Submission
 router.post('/signup', async (req, res) => {
     const { username, email, password } = req.body;
-    
+
     if (!username || !email || !password) {
         return res.render('auth/signup', { error: "All fields are required." });
     }
@@ -21,14 +21,9 @@ router.post('/signup', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Insert user into the database
-        let sql = "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)";
-        db.query(sql, [username, email, hashedPassword], (err, result) => {
-            if (err) {
-                console.error(err);
-                return res.render('auth/signup', { error: "User registration failed. Try again." });
-            }
-            res.redirect('/auth/login');
-        });
+        const sql = "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)";
+        await db.query(sql, [username, email, hashedPassword]);
+        res.redirect('/auth/login');
     } catch (error) {
         console.error(error);
         res.render('auth/signup', { error: "An error occurred. Please try again." });
@@ -41,19 +36,16 @@ router.get('/login', (req, res) => {
 });
 
 // Handle Login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
         return res.render('auth/login', { error: "All fields are required." });
     }
 
-    let sql = "SELECT * FROM users WHERE email = ?";
-    db.query(sql, [email], async (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.render('auth/login', { error: "Login failed. Try again." });
-        }
+    try {
+        const sql = "SELECT * FROM users WHERE email = ?";
+        const [results] = await db.query(sql, [email]);
 
         if (results.length === 0) {
             return res.render('auth/login', { error: "Invalid email or password." });
@@ -68,7 +60,10 @@ router.post('/login', (req, res) => {
 
         req.session.user = { id: user.user_id, username: user.username };
         res.redirect('/');
-    });
+    } catch (err) {
+        console.error(err);
+        res.render('auth/login', { error: "Login failed. Try again." });
+    }
 });
 
 // Handle Logout
