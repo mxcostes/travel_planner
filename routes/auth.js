@@ -26,6 +26,9 @@ router.post('/signup', async (req, res) => {
         res.redirect('/auth/login');
     } catch (error) {
         console.error(error);
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.render('auth/signup', { error: "That username or email is already registered." });
+        }
         res.render('auth/signup', { error: "An error occurred. Please try again." });
     }
 });
