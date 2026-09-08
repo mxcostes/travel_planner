@@ -90,7 +90,48 @@ async function extractBookingFromPdf(pdfBuffer) {
     if (!toolUse) {
         throw new Error('Extraction did not return structured data');
     }
-    return toolUse.input;
+    return normalizeExtraction(toolUse.input);
+}
+
+// The model doesn't reliably return { booking, itinerary_segments,
+// expense_items } at the top level as declared - it sometimes wraps the
+// whole thing in an extra, unpredictably-named key, occasionally without
+// even nesting a "booking" key inside that wrapper. Rather than guess at
+// wrapper names, search the returned tree for objects/arrays that have the
+// actual leaf fields we care about.
+function findObjectWithKeys(node, requiredKeys, depth = 0) {
+    if (!node || typeof node !== 'object' || Array.isArray(node) || depth > 4) {
+        return null;
+    }
+    if (requiredKeys.every((key) => key in node)) {
+        return node;
+    }
+    for (const value of Object.values(node)) {
+        const found = findObjectWithKeys(value, requiredKeys, depth + 1);
+        if (found) return found;
+    }
+    return null;
+}
+
+function findArrayOfShape(node, requiredKeys, depth = 0) {
+    if (!node || typeof node !== 'object' || depth > 4) {
+        return null;
+    }
+    if (Array.isArray(node) && node.length > 0 && requiredKeys.every((key) => key in node[0])) {
+        return node;
+    }
+    for (const value of Object.values(node)) {
+        const found = findArrayOfShape(value, requiredKeys, depth + 1);
+        if (found) return found;
+    }
+    return null;
+}
+
+function normalizeExtraction(raw) {
+    const booking = findObjectWithKeys(raw, ['accommodation_type', 'vendor_name']) || {};
+    const itinerary_segments = findArrayOfShape(raw, ['activity_type', 'activity_date']) || [];
+    const expense_items = findArrayOfShape(raw, ['category', 'amount']) || [];
+    return { booking, itinerary_segments, expense_items };
 }
 
 module.exports = { extractBookingFromPdf };
