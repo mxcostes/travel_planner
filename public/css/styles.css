@@ -115,6 +115,25 @@ body {
     background: transparent;
 }
 
+.drive-time-widget {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    margin: 1rem;
+    width: 320px;
+    z-index: 1050;
+}
+
+/* Below tablet width the floating widget covers too much of the screen
+   to stay fixed in a corner, so it drops into the normal page flow. */
+@media (max-width: 767.98px) {
+    .drive-time-widget {
+        position: static;
+        width: 100%;
+        margin: 1rem 0;
+    }
+}
+
 /* .pac-container {
     z-index: 10000 !important;  
     position: absolute !important; 

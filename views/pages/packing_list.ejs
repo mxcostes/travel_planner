@@ -48,8 +48,8 @@
                                     <div class="d-flex align-items-center">
                                         <input type="checkbox" class="form-check-input me-2 item-checkbox" data-item-id="<%= item.item_id %>" <%= item.packed ? 'checked' : '' %> >
                                         <span class="me-2 item-name" id="display-name-<%= item.item_id %>"><%= item.item_name %></span>
-                                        <form action="/trips/<%= trip.trip_id %>/packing_list/edit/<%= item.item_id %>" method="POST" class="d-none" id="edit-form-<%= item.item_id %>">
-                                            <input type="text" name="item_name" class="form-control form-control-sm me-2 d-inline-block" value="<%= item.item_name %>" style="width: 150px;" required>
+                                        <form action="/trips/<%= trip.trip_id %>/packing_list/edit/<%= item.item_id %>" method="POST" class="d-none flex-grow-1 align-items-center" id="edit-form-<%= item.item_id %>" style="display: flex;">
+                                            <input type="text" name="item_name" class="form-control form-control-sm me-2 flex-grow-1" value="<%= item.item_name %>" required>
                                             <button type="submit" class="btn btn-sm btn-success">Save</button>
                                         </form>
                                     </div>
