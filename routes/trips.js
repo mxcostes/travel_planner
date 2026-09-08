@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const upload = require('../config/multer');
+const uploadMemory = require('../config/multerMemory');
 const s3 = require('../config/r2');
-const { GetObjectCommand } = require('@aws-sdk/client-s3');
+const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const { extractBookingFromPdf } = require('../controllers/bookingExtraction');
 const axios = require('axios');
 const checkTripAccess = require('../middleware/tripAccess'); // Import middleware
 require('dotenv').config();
@@ -653,6 +655,71 @@ router.post('/:trip_id/bookings/add', upload.single('bookingFile'), async (req, 
         res.redirect(`/trips/${trip_id}/bookings`);
     } catch (err) {
         console.error("❌ Error adding booking:", err);
+        res.status(500).send("Error adding booking.");
+    }
+});
+
+// Upload a booking PDF and let Claude extract the fields, for the user to
+// review and edit before anything is saved.
+router.post('/:trip_id/bookings/extract', uploadMemory.single('bookingFile'), async (req, res) => {
+    const { trip_id } = req.params;
+
+    if (!req.file) {
+        return res.status(400).send("No file uploaded.");
+    }
+
+    try {
+        const [tripResult] = await db.query("SELECT * FROM trips WHERE trip_id = ?", [trip_id]);
+        if (tripResult.length === 0) {
+            return res.status(404).send("Trip not found.");
+        }
+        const trip = tripResult[0];
+
+        const extracted = await extractBookingFromPdf(req.file.buffer);
+
+        const key = Date.now() + '-' + req.file.originalname;
+        await s3.send(new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET,
+            Key: key,
+            Body: req.file.buffer,
+            ContentType: 'application/pdf'
+        }));
+
+        res.render('pages/booking_review', {
+            trip,
+            booking: extracted.booking || {},
+            extractedData: JSON.stringify(extracted),
+            fileName: key,
+            originalName: req.file.originalname,
+            apiKey: process.env.GOOGLE_API_KEY
+        });
+    } catch (err) {
+        console.error("❌ Failed to extract booking:", err);
+        res.status(500).send("❌ Failed to read that document. Try again, or add the booking manually.");
+    }
+});
+
+// Save a booking that was already extracted and reviewed - the file is
+// already in R2 from the /extract step, so no re-upload here.
+router.post('/:trip_id/bookings/add-extracted', async (req, res) => {
+    const { trip_id } = req.params;
+    let { accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name, original_name, extracted_data } = req.body;
+
+    if (!end_date || end_date.trim() === '') {
+        end_date = null;
+    }
+
+    const sql = `
+        INSERT INTO bookings
+        (trip_id, accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name, original_name, extracted_data)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    try {
+        await db.query(sql, [trip_id, accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name || null, original_name || null, extracted_data || null]);
+        res.redirect(`/trips/${trip_id}/bookings`);
+    } catch (err) {
+        console.error("❌ Error adding extracted booking:", err);
         res.status(500).send("Error adding booking.");
     }
 });

@@ -57,6 +57,7 @@ CREATE TABLE `bookings` (
   `booking_link` text COLLATE utf8mb4_unicode_ci,
   `file_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `original_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `extracted_data` json DEFAULT NULL,
   `uploaded_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`booking_id`),
   KEY `trip_id` (`trip_id`),
