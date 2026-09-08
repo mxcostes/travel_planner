@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Add to Itinerary & Expenses - Kosmos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <%- include('../partials/navbar') %>
+
+    <div class="container mt-4" style="max-width: 800px;">
+        <h3>Booking saved. Add to itinerary or expenses?</h3>
+        <p class="text-muted">
+            The same document also mentioned the items below. Check anything you'd like to add to
+            <strong><%= trip.trip_name %></strong>, edit as needed, then save. Anything left unchecked is discarded -
+            it's not saved anywhere else.
+        </p>
+
+        <form action="/trips/<%= trip.trip_id %>/bookings/<%= bookingId %>/import-extras" method="POST">
+
+            <% if (itinerarySegments.length > 0) { %>
+                <h5 class="mt-4">Itinerary</h5>
+                <% itinerarySegments.forEach(function(seg, i) { %>
+                    <div class="card p-3 mb-2">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="itinerary[<%= i %>][include]" id="itin-include-<%= i %>" checked>
+                            <label class="form-check-label" for="itin-include-<%= i %>">Add this to the itinerary</label>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <label class="form-label small">Type</label>
+                                <select class="form-select form-select-sm" name="itinerary[<%= i %>][activity_type]">
+                                    <% ['Travel', 'Activity', 'Food'].forEach(function(type) { %>
+                                        <option value="<%= type %>" <%= seg.activity_type === type ? 'selected' : '' %>><%= type %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small">Name</label>
+                                <input type="text" class="form-control form-control-sm" name="itinerary[<%= i %>][activity_name]" value="<%= seg.activity_name || '' %>">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">Date</label>
+                                <input type="date" class="form-control form-control-sm" name="itinerary[<%= i %>][activity_date]" value="<%= seg.activity_date || '' %>">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">Time</label>
+                                <input type="time" class="form-control form-control-sm" name="itinerary[<%= i %>][start_time]" value="<%= seg.start_time || '' %>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">Location</label>
+                                <input type="text" class="form-control form-control-sm" name="itinerary[<%= i %>][location]" value="<%= seg.location || '' %>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">Details</label>
+                                <input type="text" class="form-control form-control-sm" name="itinerary[<%= i %>][details]" value="<%= seg.details || '' %>">
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } %>
+
+            <% if (expenseItems.length > 0) { %>
+                <h5 class="mt-4">Expenses</h5>
+                <% expenseItems.forEach(function(exp, i) { %>
+                    <div class="card p-3 mb-2">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="expenses[<%= i %>][include]" id="exp-include-<%= i %>" checked>
+                            <label class="form-check-label" for="exp-include-<%= i %>">Add this to expenses</label>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <label class="form-label small">Category</label>
+                                <select class="form-select form-select-sm" name="expenses[<%= i %>][category]">
+                                    <% ['Transportation', 'Lodging', 'Food', 'Activities', 'Miscellaneous'].forEach(function(cat) { %>
+                                        <option value="<%= cat %>" <%= exp.category === cat ? 'selected' : '' %>><%= cat %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">Description</label>
+                                <input type="text" class="form-control form-control-sm" name="expenses[<%= i %>][description]" value="<%= exp.description || '' %>">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">Amount</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm" name="expenses[<%= i %>][amount]" value="<%= exp.amount || '' %>">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Date</label>
+                                <input type="date" class="form-control form-control-sm" name="expenses[<%= i %>][expense_date]" value="<%= exp.expense_date || '' %>">
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } %>
+
+            <div class="d-flex gap-2 mt-3 mb-5">
+                <button type="submit" class="btn btn-primary flex-grow-1">Save Selected</button>
+                <a href="/trips/<%= trip.trip_id %>/bookings" class="btn btn-secondary">Skip, don't add anything</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

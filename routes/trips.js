@@ -716,11 +716,90 @@ router.post('/:trip_id/bookings/add-extracted', async (req, res) => {
     `;
 
     try {
-        await db.query(sql, [trip_id, accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name || null, original_name || null, extracted_data || null]);
-        res.redirect(`/trips/${trip_id}/bookings`);
+        const [result] = await db.query(sql, [trip_id, accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name || null, original_name || null, extracted_data || null]);
+
+        let parsed = null;
+        try {
+            parsed = extracted_data ? JSON.parse(extracted_data) : null;
+        } catch (parseErr) {
+            parsed = null;
+        }
+        const hasExtras = parsed && ((parsed.itinerary_segments && parsed.itinerary_segments.length) || (parsed.expense_items && parsed.expense_items.length));
+
+        if (hasExtras) {
+            res.redirect(`/trips/${trip_id}/bookings/${result.insertId}/review-extras`);
+        } else {
+            res.redirect(`/trips/${trip_id}/bookings`);
+        }
     } catch (err) {
         console.error("❌ Error adding extracted booking:", err);
         res.status(500).send("Error adding booking.");
+    }
+});
+
+// Show the itinerary/expense items pulled from the same document as a
+// just-saved booking, so the user can pick which ones to add.
+router.get('/:trip_id/bookings/:booking_id/review-extras', async (req, res) => {
+    const { trip_id, booking_id } = req.params;
+
+    try {
+        const [tripResult] = await db.query("SELECT * FROM trips WHERE trip_id = ?", [trip_id]);
+        if (tripResult.length === 0) {
+            return res.status(404).send("Trip not found.");
+        }
+        const [bookingResult] = await db.query("SELECT * FROM bookings WHERE booking_id = ? AND trip_id = ?", [booking_id, trip_id]);
+        if (bookingResult.length === 0) {
+            return res.status(404).send("Booking not found.");
+        }
+
+        const extracted = bookingResult[0].extracted_data || {};
+        const itinerarySegments = extracted.itinerary_segments || [];
+        const expenseItems = extracted.expense_items || [];
+
+        if (itinerarySegments.length === 0 && expenseItems.length === 0) {
+            return res.redirect(`/trips/${trip_id}/bookings`);
+        }
+
+        res.render('pages/booking_extras_review', {
+            trip: tripResult[0],
+            bookingId: booking_id,
+            itinerarySegments,
+            expenseItems,
+            apiKey: process.env.GOOGLE_API_KEY
+        });
+    } catch (err) {
+        console.error("❌ Failed to load extras review:", err);
+        res.status(500).send("❌ Failed to load extracted itinerary/expense items.");
+    }
+});
+
+// Save whichever itinerary/expense items the user checked off.
+router.post('/:trip_id/bookings/:booking_id/import-extras', async (req, res) => {
+    const { trip_id } = req.params;
+    const itinerary = Object.values(req.body.itinerary || {});
+    const expenses = Object.values(req.body.expenses || {});
+
+    try {
+        for (const item of itinerary) {
+            if (!item.include) continue;
+            await db.query(
+                "INSERT INTO itinerary (trip_id, activity_type, activity_name, activity_date, start_time, location, details) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [trip_id, item.activity_type, item.activity_name, item.activity_date, item.start_time || null, item.location || null, item.details || null]
+            );
+        }
+
+        for (const item of expenses) {
+            if (!item.include) continue;
+            await db.query(
+                "INSERT INTO expenses (trip_id, category, amount, description, expense_date) VALUES (?, ?, ?, ?, ?)",
+                [trip_id, item.category, parseFloat(item.amount) || 0, item.description || null, item.expense_date || null]
+            );
+        }
+
+        res.redirect(`/trips/${trip_id}/bookings`);
+    } catch (err) {
+        console.error("❌ Failed to import extracted items:", err);
+        res.status(500).send("❌ Failed to save the selected items.");
     }
 });
 

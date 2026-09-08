@@ -28,11 +28,11 @@ const EXTRACTION_TOOL = {
             },
             itinerary_segments: {
                 type: 'array',
-                description: 'Individual dated legs/activities described in the document (e.g. each flight leg). Captured for future use - not shown to the user yet.',
+                description: 'Individual dated legs/activities described in the document (e.g. each flight leg), offered to the user afterward to add to their itinerary.',
                 items: {
                     type: 'object',
                     properties: {
-                        activity_type: { type: 'string' },
+                        activity_type: { type: 'string', enum: ['Travel', 'Activity', 'Food'] },
                         activity_name: { type: 'string' },
                         activity_date: { type: 'string', description: 'YYYY-MM-DD' },
                         start_time: { type: ['string', 'null'], description: 'HH:MM 24-hour' },
@@ -44,11 +44,11 @@ const EXTRACTION_TOOL = {
             },
             expense_items: {
                 type: 'array',
-                description: 'Individual cost line-items broken out in the document. Captured for future use - not shown to the user yet.',
+                description: 'Individual cost line-items broken out in the document, offered to the user afterward to add to their expenses.',
                 items: {
                     type: 'object',
                     properties: {
-                        category: { type: 'string' },
+                        category: { type: 'string', enum: ['Transportation', 'Lodging', 'Food', 'Activities', 'Miscellaneous'] },
                         amount: { type: 'number' },
                         description: { type: ['string', 'null'] },
                         expense_date: { type: ['string', 'null'], description: 'YYYY-MM-DD' }
