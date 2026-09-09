@@ -206,14 +206,35 @@ CREATE TABLE `users` (
   `username` varchar(50) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
+  `forwarding_token` varchar(24) DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `first_name` varchar(50) DEFAULT NULL,
   `last_name` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `username` (`username`),
-  UNIQUE KEY `email` (`email`)
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `forwarding_token` (`forwarding_token`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `pending_imports`
+--
+
+DROP TABLE IF EXISTS `pending_imports`;
+CREATE TABLE `pending_imports` (
+  `import_id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `sender_email` varchar(255) DEFAULT NULL,
+  `original_name` varchar(255) DEFAULT NULL,
+  `file_name` varchar(255) DEFAULT NULL,
+  `extracted_data` json DEFAULT NULL,
+  `status` enum('pending','reviewed','discarded') NOT NULL DEFAULT 'pending',
+  `received_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`import_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `pending_imports_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping routines for database 'kosmos001'

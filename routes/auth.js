@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const db = require('../config/db');
 
 // Render Sign Up Page
@@ -19,10 +20,11 @@ router.post('/signup', async (req, res) => {
     try {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
+        const forwardingToken = crypto.randomBytes(9).toString('base64url');
 
         // Insert user into the database
-        const sql = "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)";
-        await db.query(sql, [username, email, hashedPassword]);
+        const sql = "INSERT INTO users (username, email, password_hash, forwarding_token) VALUES (?, ?, ?, ?)";
+        await db.query(sql, [username, email, hashedPassword, forwardingToken]);
         res.redirect('/auth/login');
     } catch (error) {
         console.error(error);

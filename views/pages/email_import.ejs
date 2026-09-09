@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Email Import - KOSMOS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <%- include('../partials/navbar2') %>
+
+    <div class="container mt-4" style="max-width: 700px;">
+        <h2>Email Import</h2>
+        <p class="text-muted">
+            Forward a booking confirmation email (with the PDF attached) to your personal Kosmos address below,
+            and it'll show up here ready to review - no need to download anything or find a file picker on your phone.
+        </p>
+
+        <div class="card p-3 mb-4">
+            <label class="form-label small text-muted mb-1">Your import address</label>
+            <div class="d-flex gap-2">
+                <input type="text" class="form-control" id="importAddress" readonly
+                    value="<%= forwardingToken %>@<%= importDomain %>">
+                <button class="btn btn-outline-secondary" type="button" onclick="copyAddress()">Copy</button>
+            </div>
+        </div>
+
+        <h5>Pending Review</h5>
+        <% if (pending.length === 0) { %>
+            <p class="text-muted">Nothing waiting - forwarded bookings will show up here.</p>
+        <% } else { %>
+            <% pending.forEach(function(item) { %>
+                <div class="card p-3 mb-2">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong><%= item.original_name || 'Untitled document' %></strong><br>
+                            <span class="text-muted small">
+                                From <%= item.sender_email || 'unknown sender' %>
+                                &middot; <%= new Date(item.received_at).toLocaleDateString() %>
+                            </span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="/email-import/<%= item.import_id %>/review" class="btn btn-primary btn-sm">Review</a>
+                            <form action="/email-import/<%= item.import_id %>/discard" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Discard</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } %>
+    </div>
+
+    <script>
+        function copyAddress() {
+            const input = document.getElementById('importAddress');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+        }
+    </script>
+</body>
+</html>

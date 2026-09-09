@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Review Imported Booking - Kosmos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=<%= apiKey %>&libraries=places"></script>
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <%- include('../partials/navbar2') %>
+
+    <div class="container mt-4" style="max-width: 700px;">
+        <h3>Review Imported Booking</h3>
+        <p class="text-muted">
+            Pulled from <strong><%= pendingImport.original_name %></strong>, forwarded from
+            <%= pendingImport.sender_email || 'an unknown sender' %>. Check everything below, choose a trip, then save.
+        </p>
+
+        <% if (booking.confirmation_number) { %>
+            <div class="alert alert-info">
+                Confirmation number found in document: <strong><%= booking.confirmation_number %></strong>
+                (not currently saved as its own field, noted here for your reference)
+            </div>
+        <% } %>
+
+        <div class="card p-3">
+            <form action="/email-import/<%= pendingImport.import_id %>/confirm" method="POST" id="importConfirmForm">
+
+                <div class="mb-3">
+                    <label for="trip_choice" class="form-label">Which trip is this for?</label>
+                    <select class="form-select" id="trip_choice" name="trip_choice" required onchange="toggleNewTripFields()">
+                        <option value="">Select a trip</option>
+                        <% trips.forEach(function(trip) { %>
+                            <option value="<%= trip.trip_id %>"><%= trip.trip_name %></option>
+                        <% }); %>
+                        <option value="new">+ Create a new trip</option>
+                    </select>
+                </div>
+
+                <div id="newTripFields" class="border rounded p-3 mb-3 d-none">
+                    <div class="mb-3">
+                        <label for="new_trip_name" class="form-label">New Trip Name</label>
+                        <input type="text" class="form-control" id="new_trip_name" name="new_trip_name">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="new_trip_start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="new_trip_start_date" name="new_trip_start_date">
+                        </div>
+                        <div class="col">
+                            <label for="new_trip_end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="new_trip_end_date" name="new_trip_end_date">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <label for="new_trip_start_location" class="form-label">Start Location</label>
+                            <input type="text" class="form-control" id="new_trip_start_location" name="new_trip_start_location">
+                        </div>
+                        <div class="col">
+                            <label for="new_trip_end_location" class="form-label">End Location</label>
+                            <input type="text" class="form-control" id="new_trip_end_location" name="new_trip_end_location">
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <label for="accommodation_type" class="form-label">Accommodation Type</label>
+                    <select class="form-select" id="accommodation_type" name="accommodation_type" required>
+                        <option value="">Select Type</option>
+                        <% ['Transportation', 'Lodging', 'Activity', 'Food'].forEach(function(type) { %>
+                            <option value="<%= type %>" <%= booking.accommodation_type === type ? 'selected' : '' %>><%= type %></option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="vendor_name" class="form-label">Vendor Name</label>
+                    <input type="text" class="form-control" id="vendor_name" name="vendor_name" value="<%= booking.vendor_name || '' %>" required>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="<%= booking.start_date || '' %>" required>
+                    </div>
+                    <div class="col">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="<%= booking.end_date || '' %>">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="booking_link" class="form-label">Booking Link (Optional)</label>
+                    <input type="url" class="form-control" id="booking_link" name="booking_link" placeholder="https://example.com/booking" value="<%= booking.booking_link || '' %>">
+                </div>
+
+                <div class="mb-3">
+                    <label for="location" class="form-label">Location</label>
+                    <input type="text" class="form-control" id="location" name="location" placeholder="Enter a location" value="<%= booking.location || '' %>">
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col">
+                        <label for="start_location" class="form-label">Start Location</label>
+                        <input type="text" class="form-control" id="start_location" name="start_location" placeholder="Enter start location" value="<%= booking.start_location || '' %>">
+                    </div>
+                    <div class="col">
+                        <label for="end_location" class="form-label">End Location</label>
+                        <input type="text" class="form-control" id="end_location" name="end_location" placeholder="Enter end location" value="<%= booking.end_location || '' %>">
+                    </div>
+                </div>
+
+                <input type="hidden" name="file_name" value="<%= pendingImport.file_name %>">
+                <input type="hidden" name="original_name" value="<%= pendingImport.original_name %>">
+                <input type="hidden" name="extracted_data" value="<%= extractedData %>">
+
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary flex-grow-1">Save Booking</button>
+                    <a href="/email-import" class="btn btn-secondary">Back</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleNewTripFields() {
+            const choice = document.getElementById('trip_choice').value;
+            document.getElementById('newTripFields').classList.toggle('d-none', choice !== 'new');
+        }
+
+        function initAutocomplete() {
+            if (!window.google || !google.maps || !google.maps.places) return;
+            new google.maps.places.Autocomplete(document.getElementById('location'));
+            new google.maps.places.Autocomplete(document.getElementById('start_location'));
+            new google.maps.places.Autocomplete(document.getElementById('end_location'));
+        }
+        google.maps.event.addDomListener(window, 'load', initAutocomplete);
+    </script>
+</body>
+</html>

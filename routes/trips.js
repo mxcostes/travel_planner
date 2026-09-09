@@ -7,6 +7,7 @@ const s3 = require('../config/r2');
 const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { extractBookingFromPdf } = require('../controllers/bookingExtraction');
+const { insertBookingFromFields } = require('../controllers/bookingSave');
 const axios = require('axios');
 const checkTripAccess = require('../middleware/tripAccess'); // Import middleware
 require('dotenv').config();
@@ -703,31 +704,12 @@ router.post('/:trip_id/bookings/extract', uploadMemory.single('bookingFile'), as
 // already in R2 from the /extract step, so no re-upload here.
 router.post('/:trip_id/bookings/add-extracted', async (req, res) => {
     const { trip_id } = req.params;
-    let { accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name, original_name, extracted_data } = req.body;
-
-    if (!end_date || end_date.trim() === '') {
-        end_date = null;
-    }
-
-    const sql = `
-        INSERT INTO bookings
-        (trip_id, accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name, original_name, extracted_data)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
 
     try {
-        const [result] = await db.query(sql, [trip_id, accommodation_type, vendor_name, start_date, end_date, location, start_location, end_location, booking_link, file_name || null, original_name || null, extracted_data || null]);
-
-        let parsed = null;
-        try {
-            parsed = extracted_data ? JSON.parse(extracted_data) : null;
-        } catch (parseErr) {
-            parsed = null;
-        }
-        const hasExtras = parsed && ((parsed.itinerary_segments && parsed.itinerary_segments.length) || (parsed.expense_items && parsed.expense_items.length));
+        const { bookingId, hasExtras } = await insertBookingFromFields(trip_id, req.body);
 
         if (hasExtras) {
-            res.redirect(`/trips/${trip_id}/bookings/${result.insertId}/review-extras`);
+            res.redirect(`/trips/${trip_id}/bookings/${bookingId}/review-extras`);
         } else {
             res.redirect(`/trips/${trip_id}/bookings`);
         }

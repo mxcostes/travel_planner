@@ -46,6 +46,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 const tripsRoutes = require('./routes/trips'); // Routes for trips
 const authRoutes = require('./routes/auth');
+const emailImportRoutes = require('./routes/emailImport');
 
 
 
@@ -72,6 +73,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/trips', tripsRoutes);
 app.use('/auth', authRoutes);
+app.use('/', emailImportRoutes);
 
 // Homepage Route
 app.get('/', async (req, res) => {
