@@ -5,7 +5,7 @@ const db = require('../config/db');
 const s3 = require('../config/r2');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const uploadAny = require('../config/multerAny');
-const { extractBookingFromPdf } = require('../controllers/bookingExtraction');
+const { extractBookingFromPdf, extractBookingFromText } = require('../controllers/bookingExtraction');
 const { insertBookingFromFields } = require('../controllers/bookingSave');
 
 function verifyMailgunSignature(body) {
@@ -38,24 +38,37 @@ router.post('/webhooks/inbound-email', uploadAny.any(), async (req, res) => {
         const userId = users[0].user_id;
 
         const pdfFile = (req.files || []).find((f) => f.mimetype === 'application/pdf');
-        if (!pdfFile) {
-            console.warn("⚠️ Inbound email: no PDF attachment from", recipient);
-            return res.status(200).send('No PDF attachment');
+
+        let extracted;
+        let key = null;
+        let originalName = null;
+
+        if (pdfFile) {
+            extracted = await extractBookingFromPdf(pdfFile.buffer);
+
+            key = Date.now() + '-' + pdfFile.originalname;
+            await s3.send(new PutObjectCommand({
+                Bucket: process.env.R2_BUCKET,
+                Key: key,
+                Body: pdfFile.buffer,
+                ContentType: 'application/pdf'
+            }));
+            originalName = pdfFile.originalname;
+        } else {
+            // No attachment - the confirmation may just be in the email body itself.
+            const bodyText = (req.body['stripped-text'] || req.body['body-plain'] || '').trim();
+            if (!bodyText) {
+                console.warn("⚠️ Inbound email: no PDF attachment or body text from", recipient);
+                return res.status(200).send('No PDF attachment or body text');
+            }
+
+            extracted = await extractBookingFromText(bodyText);
+            originalName = req.body.subject || 'Forwarded email';
         }
-
-        const extracted = await extractBookingFromPdf(pdfFile.buffer);
-
-        const key = Date.now() + '-' + pdfFile.originalname;
-        await s3.send(new PutObjectCommand({
-            Bucket: process.env.R2_BUCKET,
-            Key: key,
-            Body: pdfFile.buffer,
-            ContentType: 'application/pdf'
-        }));
 
         await db.query(
             "INSERT INTO pending_imports (user_id, sender_email, original_name, file_name, extracted_data) VALUES (?, ?, ?, ?, ?)",
-            [userId, req.body.sender || req.body.from || null, pdfFile.originalname, key, JSON.stringify(extracted)]
+            [userId, req.body.sender || req.body.from || null, originalName, key, JSON.stringify(extracted)]
         );
 
         res.status(200).send('OK');

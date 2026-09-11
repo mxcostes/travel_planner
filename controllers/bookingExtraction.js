@@ -61,29 +61,13 @@ const EXTRACTION_TOOL = {
     }
 };
 
-async function extractBookingFromPdf(pdfBuffer) {
+async function runExtraction(content) {
     const response = await anthropic.messages.create({
         model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5',
         max_tokens: 2048,
         tools: [EXTRACTION_TOOL],
         tool_choice: { type: 'tool', name: 'extract_trip_document' },
-        messages: [{
-            role: 'user',
-            content: [
-                {
-                    type: 'document',
-                    source: {
-                        type: 'base64',
-                        media_type: 'application/pdf',
-                        data: pdfBuffer.toString('base64')
-                    }
-                },
-                {
-                    type: 'text',
-                    text: 'Extract the booking, itinerary, and expense information from this travel document. If a field is not present, omit it or use null rather than guessing.'
-                }
-            ]
-        }]
+        messages: [{ role: 'user', content }]
     });
 
     const toolUse = response.content.find((block) => block.type === 'tool_use');
@@ -91,6 +75,34 @@ async function extractBookingFromPdf(pdfBuffer) {
         throw new Error('Extraction did not return structured data');
     }
     return normalizeExtraction(toolUse.input);
+}
+
+async function extractBookingFromPdf(pdfBuffer) {
+    return runExtraction([
+        {
+            type: 'document',
+            source: {
+                type: 'base64',
+                media_type: 'application/pdf',
+                data: pdfBuffer.toString('base64')
+            }
+        },
+        {
+            type: 'text',
+            text: 'Extract the booking, itinerary, and expense information from this travel document. If a field is not present, omit it or use null rather than guessing.'
+        }
+    ]);
+}
+
+// Forwarded emails don't always include a PDF - the confirmation is often
+// just in the email body itself.
+async function extractBookingFromText(emailText) {
+    return runExtraction([
+        {
+            type: 'text',
+            text: `Extract the booking, itinerary, and expense information from this forwarded email. If a field is not present, omit it or use null rather than guessing.\n\n---\n\n${emailText}`
+        }
+    ]);
 }
 
 // The model doesn't reliably return { booking, itinerary_segments,
@@ -134,4 +146,4 @@ function normalizeExtraction(raw) {
     return { booking, itinerary_segments, expense_items };
 }
 
-module.exports = { extractBookingFromPdf };
+module.exports = { extractBookingFromPdf, extractBookingFromText };
