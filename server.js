@@ -33,8 +33,12 @@ const sessionStore = new MySQLStore({}, db);
   }));
 
 // Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+// Mailgun's inbound-parse webhook posts as urlencoded (not multipart) when
+// the email has no attachments, and fields like body-html/message-headers
+// can comfortably exceed body-parser's 100kb default - raise it so those
+// forwards aren't rejected with 413 before they reach the route.
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+app.use(bodyParser.json({ limit: '10mb' }));
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
 
