@@ -168,6 +168,7 @@
                                                             <form method="POST"
                                                                 action="/trips/<%= trip.trip_id %>/itinerary/delete/<%= activity.activity_id %>"
                                                                 style="display:inline;">
+                                                                <input type="hidden" name="date" value="<%= selectedDate %>">
                                                                 <button class="btn btn-danger btn-sm"
                                                                     type="submit">🗑️</button>
                                                             </form>
