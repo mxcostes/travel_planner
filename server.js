@@ -106,6 +106,7 @@ app.get('/', async (req, res) => {
         const unscheduledTrips = [];
         const sharedTrips = [];
         let nextTrip = null;
+        let currentTrip = null; // Trip that has started but hasn't ended yet (today falls inside it)
 
         const seenTripIds = new Set(); // 🔹 Prevent duplicates in non-shared lists
 
@@ -124,10 +125,21 @@ app.get('/', async (req, res) => {
                     unscheduledTrips.push(trip);
                 } else if (endDate < today) {
                     pastTrips.push(trip);
-                } else if (endDate >= today) {
+                } else if (startDate < today) {
+                    // Already started, hasn't ended - this is happening right now,
+                    // not "upcoming". Keeping it out of upcomingTrips is what keeps
+                    // that card's count in sync with the /trips/upcoming page below,
+                    // which only queries start_date >= today.
+                    if (!currentTrip) {
+                        currentTrip = trip;
+                    }
+                } else {
+                    // startDate >= today
                     upcomingTrips.push(trip); // ✅ Push first, then assign nextTrip
                     if (!nextTrip) {
                         nextTrip = trip; // ✅ Now nextTrip is guaranteed to be in upcomingTrips
+                        const msPerDay = 1000 * 60 * 60 * 24;
+                        nextTrip.days_until = Math.round((new Date(startDate) - new Date(today)) / msPerDay);
                     }
                 }
             }
@@ -149,7 +161,8 @@ app.get('/', async (req, res) => {
         res.render('pages/dashboard', {
             user: req.session.user,
             trips: { pastTrips, upcomingTrips, unscheduledTrips, sharedTrips },
-            nextTrip
+            nextTrip,
+            currentTrip
         });
     } catch (err) {
         console.error("❌ Failed to fetch trips:", err);

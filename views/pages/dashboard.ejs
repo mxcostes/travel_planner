@@ -73,14 +73,29 @@
                             </div>
                         </div>
                     <% } %>
-                    <% if (nextTrip) { %>
+                    <% if (currentTrip) { %>
+                        <div class="col-md-4">
+                            <div class="card next-trip-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Current Trip</h5>
+                                    <h5 class="card-title"><%= currentTrip.trip_name %></h5>
+                                    <p class="card-text">
+                                        <%= currentTrip.start_location %> - <%= currentTrip.end_location %><br>
+                                        <%= currentTrip.formatted_start_date %> - <%= currentTrip.formatted_end_date %><br>
+                                        Happening now
+                                    </p>
+                                    <a href="/trips/<%= currentTrip.trip_id %>" class="btn btn-primary">Go To Trip</a>
+                                </div>
+                            </div>
+                        </div>
+                    <% } else if (nextTrip) { %>
                         <div class="col-md-4">
                             <div class="card next-trip-card">
                                 <div class="card-body">
                                     <h5 class="card-title">Next Trip</h5>
                                     <h5 class="card-title"><%= nextTrip.trip_name %></h5>
                                     <p class="card-text">
-                                        <%= nextTrip.destination %><br>
+                                        <%= nextTrip.start_location %> - <%= nextTrip.end_location %><br>
                                         <%= nextTrip.formatted_start_date %> - <%= nextTrip.formatted_end_date %><br>
                                         <%= nextTrip.days_until %> Days Away
                                     </p>
