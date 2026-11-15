@@ -6,8 +6,8 @@ const uploadMemory = require('../config/multerMemory');
 const s3 = require('../config/r2');
 const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { extractBookingFromPdf } = require('../controllers/bookingExtraction');
-const { insertBookingFromFields } = require('../controllers/bookingSave');
+const { extractBookingFromPdf, extractItineraryFromPlanText } = require('../controllers/bookingExtraction');
+const { insertBookingFromFields, insertSelectedExtras } = require('../controllers/bookingSave');
 const axios = require('axios');
 const checkTripAccess = require('../middleware/tripAccess'); // Import middleware
 require('dotenv').config();
@@ -758,29 +758,73 @@ router.get('/:trip_id/bookings/:booking_id/review-extras', async (req, res) => {
 // Save whichever itinerary/expense items the user checked off.
 router.post('/:trip_id/bookings/:booking_id/import-extras', async (req, res) => {
     const { trip_id } = req.params;
-    const itinerary = Object.values(req.body.itinerary || {});
-    const expenses = Object.values(req.body.expenses || {});
 
     try {
-        for (const item of itinerary) {
-            if (!item.include) continue;
-            await db.query(
-                "INSERT INTO itinerary (trip_id, activity_type, activity_name, activity_date, start_time, location, details) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                [trip_id, item.activity_type, item.activity_name, item.activity_date, item.start_time || null, item.location || null, item.details || null]
-            );
-        }
-
-        for (const item of expenses) {
-            if (!item.include) continue;
-            await db.query(
-                "INSERT INTO expenses (trip_id, category, amount, description, expense_date) VALUES (?, ?, ?, ?, ?)",
-                [trip_id, item.category, parseFloat(item.amount) || 0, item.description || null, item.expense_date || null]
-            );
-        }
-
+        await insertSelectedExtras(trip_id, req.body);
         res.redirect(`/trips/${trip_id}/bookings`);
     } catch (err) {
         console.error("❌ Failed to import extracted items:", err);
+        res.status(500).send("❌ Failed to save the selected items.");
+    }
+});
+
+// Paste a free-form itinerary (e.g. a day-by-day plan drafted in a separate
+// chat) and let Claude pull out individual dated activities for review
+// before anything is saved.
+router.get('/:trip_id/itinerary/import', async (req, res) => {
+    const { trip_id } = req.params;
+
+    try {
+        const [tripResult] = await db.query("SELECT * FROM trips WHERE trip_id = ?", [trip_id]);
+        if (tripResult.length === 0) {
+            return res.status(404).send("Trip not found.");
+        }
+        res.render('pages/itinerary_import', { trip: tripResult[0] });
+    } catch (err) {
+        console.error("❌ Failed to load itinerary import page:", err);
+        res.status(500).send("❌ Failed to load page.");
+    }
+});
+
+router.post('/:trip_id/itinerary/import', async (req, res) => {
+    const { trip_id } = req.params;
+    const planText = (req.body.planText || '').trim();
+
+    if (!planText) {
+        return res.status(400).send("Paste an itinerary first.");
+    }
+
+    try {
+        const [tripResult] = await db.query("SELECT * FROM trips WHERE trip_id = ?", [trip_id]);
+        if (tripResult.length === 0) {
+            return res.status(404).send("Trip not found.");
+        }
+
+        const extracted = await extractItineraryFromPlanText(planText);
+
+        if (extracted.itinerary_segments.length === 0 && extracted.expense_items.length === 0) {
+            return res.status(422).send("❌ Couldn't find any dated activities in that text. Try pasting the full day-by-day plan.");
+        }
+
+        res.render('pages/itinerary_import_review', {
+            trip: tripResult[0],
+            itinerarySegments: extracted.itinerary_segments,
+            expenseItems: extracted.expense_items
+        });
+    } catch (err) {
+        console.error("❌ Failed to extract itinerary plan:", err);
+        res.status(500).send("❌ Failed to read that itinerary. Try again.");
+    }
+});
+
+router.post('/:trip_id/itinerary/import/confirm', async (req, res) => {
+    const { trip_id } = req.params;
+
+    try {
+        await insertSelectedExtras(trip_id, req.body);
+        res.redirect(`/trips/${trip_id}/itinerary`);
+    } catch (err) {
+        console.error("❌ Failed to import itinerary:", err);
         res.status(500).send("❌ Failed to save the selected items.");
     }
 });

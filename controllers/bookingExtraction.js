@@ -146,4 +146,70 @@ function normalizeExtraction(raw) {
     return { booking, itinerary_segments, expense_items };
 }
 
-module.exports = { extractBookingFromPdf, extractBookingFromText };
+// A pasted trip plan (e.g. drafted in a separate chat) has no single
+// "booking" - it's just a list of dated activities, possibly across many
+// days, so this uses its own tool schema rather than EXTRACTION_TOOL.
+const PLAN_EXTRACTION_TOOL = {
+    name: 'extract_itinerary_plan',
+    description: 'Extract individual dated activities, and any cost estimates, from a free-form travel itinerary or day-by-day trip plan.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            itinerary_segments: {
+                type: 'array',
+                description: 'Every individual dated activity/stop described in the plan, offered to the user afterward to add to their itinerary.',
+                items: {
+                    type: 'object',
+                    properties: {
+                        activity_type: { type: 'string', enum: ['Travel', 'Activity', 'Food'] },
+                        activity_name: { type: 'string' },
+                        activity_date: { type: 'string', description: 'YYYY-MM-DD' },
+                        start_time: { type: ['string', 'null'], description: 'HH:MM 24-hour' },
+                        location: { type: ['string', 'null'] },
+                        details: { type: ['string', 'null'] }
+                    },
+                    required: ['activity_type', 'activity_name', 'activity_date']
+                }
+            },
+            expense_items: {
+                type: 'array',
+                description: 'Any cost estimates broken out in the plan, offered to the user afterward to add to their expenses.',
+                items: {
+                    type: 'object',
+                    properties: {
+                        category: { type: 'string', enum: ['Transportation', 'Lodging', 'Food', 'Activities', 'Miscellaneous'] },
+                        amount: { type: 'number' },
+                        description: { type: ['string', 'null'] },
+                        expense_date: { type: ['string', 'null'], description: 'YYYY-MM-DD' }
+                    },
+                    required: ['category', 'amount']
+                }
+            }
+        },
+        required: ['itinerary_segments']
+    }
+};
+
+async function extractItineraryFromPlanText(planText) {
+    const response = await anthropic.messages.create({
+        model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5',
+        max_tokens: 4096,
+        tools: [PLAN_EXTRACTION_TOOL],
+        tool_choice: { type: 'tool', name: 'extract_itinerary_plan' },
+        messages: [{
+            role: 'user',
+            content: `Extract every individual dated activity from this trip plan as itinerary segments, and any cost estimates as expense items. If a year isn't stated, infer it from context such as other dates in the plan. If a field is not present, omit it or use null rather than guessing.\n\n---\n\n${planText}`
+        }]
+    });
+
+    const toolUse = response.content.find((block) => block.type === 'tool_use');
+    if (!toolUse) {
+        throw new Error('Extraction did not return structured data');
+    }
+    return {
+        itinerary_segments: findArrayOfShape(toolUse.input, ['activity_type', 'activity_date']) || [],
+        expense_items: findArrayOfShape(toolUse.input, ['category', 'amount']) || []
+    };
+}
+
+module.exports = { extractBookingFromPdf, extractBookingFromText, extractItineraryFromPlanText };

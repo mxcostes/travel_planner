@@ -28,4 +28,27 @@ async function insertBookingFromFields(tripId, fields) {
     return { bookingId: result.insertId, hasExtras };
 }
 
-module.exports = { insertBookingFromFields };
+// Shared by the booking-extras review and the pasted-itinerary-plan review:
+// save whichever extracted itinerary/expense items the user checked off.
+async function insertSelectedExtras(tripId, body) {
+    const itinerary = Object.values(body.itinerary || {});
+    const expenses = Object.values(body.expenses || {});
+
+    for (const item of itinerary) {
+        if (!item.include) continue;
+        await db.query(
+            "INSERT INTO itinerary (trip_id, activity_type, activity_name, activity_date, start_time, location, details) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [tripId, item.activity_type, item.activity_name, item.activity_date, item.start_time || null, item.location || null, item.details || null]
+        );
+    }
+
+    for (const item of expenses) {
+        if (!item.include) continue;
+        await db.query(
+            "INSERT INTO expenses (trip_id, category, amount, description, expense_date) VALUES (?, ?, ?, ?, ?)",
+            [tripId, item.category, parseFloat(item.amount) || 0, item.description || null, item.expense_date || null]
+        );
+    }
+}
+
+module.exports = { insertBookingFromFields, insertSelectedExtras };
