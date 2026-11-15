@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kosmos - Plan trips, itineraries, bookings and budgets in one place</title>
+    <meta name="description" content="Kosmos keeps your itinerary, bookings, expenses and packing list together. Forward a confirmation email and the details are filled in for you.">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include('../partials/public_header') %>
+
+    <header class="bg-dark text-light text-center py-5">
+        <div class="container py-4">
+            <h1 class="display-5 fw-bold">Your whole trip, in one place</h1>
+            <p class="lead mx-auto" style="max-width: 640px;">
+                Kosmos keeps your itinerary, bookings, expenses and packing list together, so you stop
+                digging through email and spreadsheets the night before you leave.
+            </p>
+            <a href="/auth/signup" class="btn btn-primary btn-lg me-2">Create a free account</a>
+            <a href="/auth/login" class="btn btn-outline-light btn-lg">Log in</a>
+        </div>
+    </header>
+
+    <main class="container my-5">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 p-3">
+                    <h5>Forward a confirmation, skip the typing</h5>
+                    <p class="mb-0">Forward a hotel, flight or rental confirmation to your personal Kosmos address, or upload the PDF.
+                        Kosmos reads it and drafts the booking, itinerary items and expenses for you to review before anything is saved.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 p-3">
+                    <h5>Day-by-day itinerary</h5>
+                    <p class="mb-0">Plan each day with times, locations and map links, see the bookings that cover that date,
+                        and estimate driving time between stops.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 p-3">
+                    <h5>Expenses that add up</h5>
+                    <p class="mb-0">Log costs by category and date and see where the money is going, per trip.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 p-3">
+                    <h5>Packing lists</h5>
+                    <p class="mb-0">Track what is packed with a progress bar. New to packing for a trip? Start with our
+                        <a href="/guides/packing-list">travel packing checklist</a>.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 p-3">
+                    <h5>Plan together</h5>
+                    <p class="mb-0">Share a trip with travel companions as a viewer or an editor, so everyone sees the same plan.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 p-3">
+                    <h5>Always know what is next</h5>
+                    <p class="mb-0">Your dashboard separates past, upcoming and in-progress trips and shows how many days until you go.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <h3>Ready to plan your next trip?</h3>
+            <a href="/auth/signup" class="btn btn-primary btn-lg mt-2">Get started</a>
+        </div>
+    </main>
+
+    <%- include('../partials/public_footer') %>
+</body>
+</html>

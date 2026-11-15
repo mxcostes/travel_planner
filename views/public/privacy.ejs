@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Privacy Policy - Kosmos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include("../partials/public_header") %>
+    <main class="container my-5" style="max-width: 800px;">
+        <h1>Privacy Policy</h1>
+        <p class="text-muted">Last updated: <%= updated %></p>
+
+        <p>This policy explains what Kosmos collects when you use the site, why, and who else handles it. Kosmos is a trip-planning tool, and the data you put in it is your own trip information.</p>
+
+        <h4 class="mt-4">What we collect</h4>
+        <ul>
+            <li><strong>Account details:</strong> your username, email address and a hashed password. We never store your password in readable form.</li>
+            <li><strong>Trip content you add:</strong> trip names, dates and locations, itinerary items, expenses, packing lists, and bookings including any documents you upload.</li>
+            <li><strong>Forwarded emails:</strong> if you use the email import feature, the email text and any PDF attached to messages sent to your personal Kosmos address.</li>
+            <li><strong>Session cookie:</strong> a cookie that keeps you logged in. We do not use advertising or analytics cookies.</li>
+        </ul>
+
+        <h4 class="mt-4">How we use it</h4>
+        <p>We use your information only to run Kosmos: to show you your trips, share a trip with the people you choose, and fill in bookings from documents you provide. We do not sell your personal information.</p>
+
+        <h4 class="mt-4">Services that process your data</h4>
+        <ul>
+            <li><strong>Anthropic (Claude):</strong> when you upload a booking PDF or forward a confirmation email, its contents are sent to Anthropic's API to extract booking details. Extracted details are shown to you for review before they are saved.</li>
+            <li><strong>Cloudflare R2:</strong> uploaded booking documents are stored here.</li>
+            <li><strong>Google Maps Platform:</strong> locations you type are sent to Google for place suggestions and driving-time estimates.</li>
+            <li><strong>Mailgun:</strong> receives emails forwarded to your Kosmos address and passes them to us.</li>
+            <li><strong>Our hosting and database provider:</strong> stores the application and its data.</li>
+        </ul>
+
+        <h4 class="mt-4">Affiliate links</h4>
+        <p>Some links on Kosmos lead to partner sites such as Amazon, activity providers, insurers and car rental companies. If you click one, that site may set its own cookies and handle your data under its own policy. See our <a href="/affiliate-disclosure">affiliate disclosure</a>. We do not pass your trip details to these partners; links carry at most the destination of your trip.</p>
+
+        <h4 class="mt-4">Sharing trips</h4>
+        <p>When you share a trip, the people you add can see that trip's contents according to the role you give them. You can remove them at any time from the trip page.</p>
+
+        <h4 class="mt-4">Your choices</h4>
+        <p>You can edit or delete trips and their contents inside the app. To access, correct or delete your account and the data tied to it, <a href="/contact">contact us</a> and we will act on the request.</p>
+
+        <h4 class="mt-4">Changes</h4>
+        <p>If this policy changes we will update the date above.</p>
+    </main>
+    <%- include("../partials/public_footer") %>
+</body>
+</html>

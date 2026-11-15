@@ -51,6 +51,7 @@ app.set('views', path.join(__dirname, 'views'));
 const tripsRoutes = require('./routes/trips'); // Routes for trips
 const authRoutes = require('./routes/auth');
 const emailImportRoutes = require('./routes/emailImport');
+const publicRoutes = require('./routes/public');
 
 
 
@@ -79,12 +80,13 @@ app.use((req, res, next) => {
 // Routes
 app.use('/trips', tripsRoutes);
 app.use('/auth', authRoutes);
+app.use('/', publicRoutes);
 app.use('/', emailImportRoutes);
 
 // Homepage Route
 app.get('/', async (req, res) => {
     if (!req.session.user || !req.session.user.id) {
-        return res.redirect('/auth/login'); // Ensure the user is logged in
+        return res.render('public/landing');
     }
 
     const userId = req.session.user.id;

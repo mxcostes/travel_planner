@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Travel Guides - Kosmos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include("../partials/public_header") %>
+    <main class="container my-5" style="max-width: 800px;">
+        <h1>Travel Guides</h1>
+        <p class="text-muted">Practical checklists for planning a trip.</p>
+        <div class="list-group">
+            <a href="/guides/packing-list" class="list-group-item list-group-item-action">
+                <h5 class="mb-1">The Travel Packing Checklist</h5>
+                <p class="mb-0 text-muted">What to pack for almost any trip, by category, and how to avoid overpacking.</p>
+            </a>
+        </div>
+    </main>
+    <%- include("../partials/public_footer") %>
+</body>
+</html>

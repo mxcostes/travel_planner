@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Terms of Use - Kosmos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include("../partials/public_header") %>
+    <main class="container my-5" style="max-width: 800px;">
+        <h1>Terms of Use</h1>
+        <p class="text-muted">Last updated: <%= updated %></p>
+
+        <p>By creating an account or using Kosmos you agree to these terms.</p>
+
+        <h4 class="mt-4">Your account</h4>
+        <p>You are responsible for the activity on your account and for keeping your password private. Provide accurate information and do not use Kosmos for anything unlawful.</p>
+
+        <h4 class="mt-4">Your content</h4>
+        <p>You keep ownership of the trip information and documents you add. You give Kosmos permission to store and process that content to provide the service, including sending uploaded documents and forwarded emails for automated extraction as described in the <a href="/privacy">privacy policy</a>. Only upload documents you have the right to share.</p>
+
+        <h4 class="mt-4">Automated extraction can be wrong</h4>
+        <p>Booking details read from documents are generated automatically and may contain mistakes. Always check them against your original confirmation. Kosmos is a planning aid, not a substitute for your confirmations, tickets or travel documents.</p>
+
+        <h4 class="mt-4">Links and third parties</h4>
+        <p>Kosmos links to third-party sites, some through affiliate links (see the <a href="/affiliate-disclosure">affiliate disclosure</a>). We do not control those sites, and any purchase is a transaction between you and that provider. Prices, availability and insurance terms are theirs, not ours.</p>
+
+        <h4 class="mt-4">No warranty</h4>
+        <p>Kosmos is provided "as is" and "as available". We do not guarantee it will be uninterrupted or error-free, and you should keep your own copies of anything important.</p>
+
+        <h4 class="mt-4">Limit of liability</h4>
+        <p>To the extent the law allows, Kosmos is not liable for indirect or consequential losses, including missed bookings or travel costs, arising from use of the service.</p>
+
+        <h4 class="mt-4">Ending use</h4>
+        <p>You can stop using Kosmos at any time. We may suspend accounts that break these terms.</p>
+
+        <h4 class="mt-4">Changes and contact</h4>
+        <p>We may update these terms and will change the date above when we do. Questions? <a href="/contact">Contact us</a>.</p>
+    </main>
+    <%- include("../partials/public_footer") %>
+</body>
+</html>

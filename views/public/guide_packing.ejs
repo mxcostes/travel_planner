@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>The Travel Packing Checklist - Kosmos</title>
+    <meta name="description" content="A practical travel packing checklist by category: documents, clothing, toiletries, electronics and health, plus tips for packing light.">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include("../partials/public_header") %>
+    <main class="container my-5" style="max-width: 800px;">
+        <h1>The Travel Packing Checklist</h1>
+        <p class="text-muted">Last updated: <%= updated %></p>
+
+        <p>Good packing is mostly deciding in advance. Write the list while you plan the trip, pack from the list, and tick things off as they go in the bag. Adjust the quantities for how many days you are away and what the weather will be.</p>
+
+        <% const shopLinks = !!affiliates.amazonSearch('x'); %>
+        <% if (shopLinks) { %>
+            <div class="alert alert-light border small">
+                Some items below link to Amazon. <strong>As an Amazon Associate I earn from qualifying purchases.</strong>
+                See our <a href="/affiliate-disclosure">affiliate disclosure</a>.
+            </div>
+        <% } %>
+
+        <% const sections = [
+            { title: 'Documents and money', note: 'Keep these in your carry-on, never the checked bag.', items: ['Passport or ID', 'Visas and entry documents', 'Printed and digital booking confirmations', 'Travel insurance details', 'Credit and debit cards', 'Some local cash', 'Money belt'] },
+            { title: 'Clothing', note: 'Pack for the climate and aim to re-wear. Neutral colours mix and match.', items: ['Underwear and socks', 'Tops and bottoms for the trip length', 'Light jacket or rain jacket', 'Comfortable walking shoes', 'Sleepwear', 'Swimsuit', 'Sun hat'] },
+            { title: 'Toiletries', note: 'Containers over 100 ml usually cannot go in carry-on, so check airline rules.', items: ['Toothbrush and toothpaste', 'Deodorant', 'Sunscreen', 'Travel-size shampoo', 'Reusable toiletry bottles', 'Hairbrush'] },
+            { title: 'Electronics', note: 'Pack chargers in the same pouch so nothing gets left behind.', items: ['Phone charger', 'Portable battery pack', 'Universal travel adapter', 'Headphones', 'Camera'] },
+            { title: 'Health and comfort', note: 'Carry medication in its original packaging.', items: ['Prescription medication', 'First aid kit', 'Motion sickness tablets', 'Neck pillow', 'Eye mask', 'Reusable water bottle'] }
+        ]; %>
+
+        <% sections.forEach(function(section) { %>
+            <h3 class="mt-4"><%= section.title %></h3>
+            <p class="text-muted"><%= section.note %></p>
+            <ul>
+                <% section.items.forEach(function(item) { %>
+                    <li>
+                        <%= item %>
+                        <% const link = affiliates.amazonSearch(item); %>
+                        <% if (link) { %>
+                            <a href="<%= link %>" target="_blank" rel="sponsored noopener noreferrer" class="small ms-1">shop on Amazon</a>
+                        <% } %>
+                    </li>
+                <% }) %>
+            </ul>
+        <% }) %>
+
+        <h3 class="mt-4">Tips for packing light</h3>
+        <ul>
+            <li>Lay everything out first, then put back a quarter of it.</li>
+            <li>Wear your bulkiest shoes and jacket on the travel day.</li>
+            <li>Roll clothes or use packing cubes to keep the bag organised.</li>
+            <li>Check the laundry options at your accommodation before you decide how much to bring.</li>
+        </ul>
+
+        <div class="card p-3 mt-5 bg-light">
+            <h5>Keep your list with the rest of your trip</h5>
+            <p class="mb-2">Kosmos has a packing list with a progress bar next to your itinerary, bookings and expenses.</p>
+            <a href="/auth/signup" class="btn btn-primary align-self-start">Create a free account</a>
+        </div>
+    </main>
+    <%- include("../partials/public_footer") %>
+</body>
+</html>
