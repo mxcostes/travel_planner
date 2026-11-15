@@ -66,11 +66,13 @@ const emailImportRoutes = require('./routes/emailImport');
 
 // Middleware to make GOOGLE_API_KEY available in all views
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const affiliates = require('./config/affiliates');
 
 // User Info Middleware
 // ✅ Middleware to make user available globally in all EJS views
 app.use((req, res, next) => {
     res.locals.user = req.session.user || { username: "Guest" };
+    res.locals.affiliates = affiliates;
     next();
 });
 

@@ -57,6 +57,16 @@
                             </a>
                         </div>
 
+                        <% const insuranceLink = affiliates.insurance(trip.end_location); %>
+                        <% if (insuranceLink) { %>
+                            <div class="card p-3">
+                                <h5>Protect This Trip</h5>
+                                <p class="mb-2">Compare travel insurance for <%= trip.end_location %>.</p>
+                                <a href="<%= insuranceLink %>" target="_blank" rel="sponsored noopener noreferrer" class="btn btn-outline-primary w-100">Compare insurance</a>
+                                <p class="small text-muted mt-2 mb-0">Affiliate link - we may earn a commission at no cost to you.</p>
+                            </div>
+                        <% } %>
+
                         <div class="card p-3">
                             <h5>Share This Trip</h5>
                             <form method="POST" action="/trips/<%= trip.trip_id %>/share">

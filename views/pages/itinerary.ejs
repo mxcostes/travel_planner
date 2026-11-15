@@ -112,6 +112,15 @@
 
                     <!-- Activities List -->
                     <div class="list-group overflow-auto" style="height: 400px;">
+                        <% const activitiesLink = affiliates.activities(trip.end_location); %>
+                        <% if (activities.length === 0 && activitiesLink) { %>
+                            <div class="list-group-item">
+                                <strong>Nothing planned for <%= selectedDateFormatted %></strong>
+                                <p class="mb-2">Find things to do in <%= trip.end_location %>.</p>
+                                <a href="<%= activitiesLink %>" target="_blank" rel="sponsored noopener noreferrer" class="btn btn-sm btn-primary">Browse activities</a>
+                                <p class="small text-muted mt-2 mb-0">Affiliate link - we may earn a commission at no cost to you.</p>
+                            </div>
+                        <% } %>
                         <% activities.forEach((activity)=> {
                             const isEditing = edit === activity.activity_id;
                             %>
@@ -240,6 +249,11 @@
                 <span id="driveTimeResult" class="form-control text-center mb-2" readonly></span>
             </div>
             <button id="useEstimateBtn" class="btn btn-success w-100">Use Estimate</button>
+            <% const carLink = affiliates.carRental(trip.end_location); %>
+            <% if (carLink) { %>
+                <a href="<%= carLink %>" target="_blank" rel="sponsored noopener noreferrer" class="btn btn-outline-secondary btn-sm w-100 mt-2">Need a rental car?</a>
+                <p class="small text-muted mt-1 mb-0">Affiliate link - we may earn a commission.</p>
+            <% } %>
         </div>
 
         <!-- Scripts -->

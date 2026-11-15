@@ -54,6 +54,10 @@
                                         </form>
                                     </div>
                                     <div>
+                                        <% const shopLink = affiliates.amazonSearch(item.item_name); %>
+                                        <% if (shopLink) { %>
+                                            <a href="<%= shopLink %>" target="_blank" rel="sponsored noopener noreferrer" class="btn btn-sm btn-light" title="Shop for this on Amazon">🛒</a>
+                                        <% } %>
                                         <button class="btn btn-sm btn-light" onclick="toggleEditForm(<%= item.item_id %>)">✏️</button>
                                         <form action="/trips/<%= trip.trip_id %>/packing_list/delete/<%= item.item_id %>" method="POST" class="d-inline">
                                             <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
@@ -62,6 +66,9 @@
                                 </li>
                             <% }); %>
                         </ul>
+                        <% if (affiliates.amazonSearch('x')) { %>
+                            <p class="small mt-2 mb-0 opacity-75">🛒 links are affiliate links - we may earn a commission at no cost to you.</p>
+                        <% } %>
 
                         <div class="progress mt-3">
                             <div 
