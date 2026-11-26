@@ -115,6 +115,26 @@ body {
     background: transparent;
 }
 
+.packing-list-items {
+    max-height: 60vh;
+    overflow-y: auto;
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #ccc transparent;
+}
+
+.packing-list-items::-webkit-scrollbar {
+    width: 6px;
+}
+
+.packing-list-items::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+}
+
+.packing-list-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 .drive-time-widget {
     position: fixed;
     bottom: 0;
