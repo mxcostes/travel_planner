@@ -25,7 +25,12 @@
 
                         <!-- Add Activity Form -->
                         <div class="card mt-4 p-3">
-                            <h5>Add Activity</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Add Activity</h5>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#itineraryHelpModal" title="How do I add activities?">
+                                    <i class="bi bi-question-circle"></i>
+                                </button>
+                            </div>
                             <form id="add-activity-form" method="POST"
                                 action="/trips/<%= trip.trip_id %>/itinerary/add">
                                 <!-- <input type="text" class="form-control mb-2" name="activity_type"
@@ -349,7 +354,31 @@
                 );
             });
         </script>
-     
+
+        <!-- Help Modal -->
+        <div class="modal fade" id="itineraryHelpModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Adding to your itinerary</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6>Add Activity</h6>
+                        <p>Use this form to add one activity at a time: pick a type, give it a name, date and
+                            start time, and optionally a duration, location and details.</p>
+                        <h6>Import from Chat</h6>
+                        <p class="mb-0">Already have a day-by-day plan from somewhere else - a planning chat,
+                            notes, an email? Click "Import from Chat" and paste the whole thing in. Claude will
+                            split it into individual activities, which you can review, edit or uncheck before
+                            anything is added to the itinerary.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Got it</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
 </body>
 

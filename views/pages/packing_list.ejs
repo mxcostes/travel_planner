@@ -25,7 +25,12 @@
             <div class="col-md-4">
                 <div class="card bg-primary text-white">
                     <div class="card-body">
-                        <h5 class="card-title">Add Item</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Add Item</h5>
+                            <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#packingHelpModal" title="How do I add items?">
+                                <i class="bi bi-question-circle"></i>
+                            </button>
+                        </div>
                         <form action="/trips/<%= trip.trip_id %>/packing_list/add" method="POST">
                             <div class="mb-3">
                                 <label class="form-label">Description</label>
@@ -91,6 +96,29 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="packingHelpModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Adding to your packing list</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Add Item</h6>
+                    <p>Type a single item and click "Add Item" to drop it straight onto the list.</p>
+                    <h6>Import Items</h6>
+                    <p class="mb-0">Have a packing list from somewhere else - an AI assistant's suggestions, notes,
+                        whatever? Click "Import from Chat" and paste the whole thing in. Claude will split it into
+                        individual items, which you can review, edit or uncheck before anything is added.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Got it</button>
                 </div>
             </div>
         </div>
