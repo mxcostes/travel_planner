@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>How to Choose Tours and Activities for Your Trip - Kosmos</title>
+    <meta name="description" content="How to pick tours and activities that are worth the money: what to book ahead, what to leave open, and what to check before you pay.">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include("../partials/public_header") %>
+    <main class="container my-5" style="max-width: 800px;">
+        <h1>How to Choose Tours and Activities for Your Trip</h1>
+        <p class="text-muted">Last updated: <%= updated %></p>
+
+        <p>An empty day in an itinerary is not a problem to fill; it is room to decide. The goal is a trip with a few things you booked on purpose and plenty of space for what you stumble into. Here is how to pick the ones worth paying for.</p>
+
+        <h3 class="mt-4">1. Start with what is actually limited</h3>
+        <p>Most activities can be booked the day before or on the day. A few cannot. Before anything else, check for things that sell out or cap daily numbers: timed-entry attractions, popular restaurants, small-group tours, day trips with limited seats, and anything in a peak season. Book those first, and leave the rest open.</p>
+
+        <h3 class="mt-4">2. Pick one anchor per day</h3>
+        <p>Plan one main activity a day and let everything else be optional. Two fixed, time-bound activities in one day usually means one of them is rushed. Mornings tend to be quieter at popular sites, so put the anchor there and keep the afternoon loose.</p>
+
+        <h3 class="mt-4">3. Check these details before you pay</h3>
+        <ul>
+            <li><strong>Cancellation policy:</strong> free cancellation up to a day or so before is worth a small price premium while your plans are still moving.</li>
+            <li><strong>What is included:</strong> entry fees, transport, food, equipment and a guide are often listed separately.</li>
+            <li><strong>Duration and meeting point:</strong> work out how long it really takes to get there, and what time you must be back.</li>
+            <li><strong>Group size:</strong> a small group or private tour costs more but changes the experience of a guided walk or a food tour.</li>
+            <li><strong>Language:</strong> confirm the tour runs in a language you will follow.</li>
+            <li><strong>Recent reviews:</strong> read the newest ones and the middling ones. They are usually the most honest.</li>
+        </ul>
+
+        <h3 class="mt-4">4. Guided or self-guided?</h3>
+        <p>A guide earns their fee where context is hard to get alone: historic sites, food markets, places with a lot of backstory. For beaches, viewpoints and wandering a good neighbourhood, a self-guided day is often better and costs nothing. Mix both.</p>
+
+        <h3 class="mt-4">5. Leave a buffer around bookings</h3>
+        <p>Allow time for travel, queues and the unexpected between fixed commitments, and avoid scheduling an activity on the day you arrive or leave. If a flight lands in the afternoon, treat that day as lost to travel.</p>
+
+        <h3 class="mt-4">6. Keep it all in one place</h3>
+        <p>Once you have booked, put the time, meeting point and confirmation where you can find them on the day. In Kosmos you can forward the confirmation email and it is added to your trip, with the activity on that day of your itinerary.</p>
+
+        <% const tpl = affiliates.activities('DESTINATION_TOKEN'); %>
+        <% if (tpl) { %>
+            <div class="card p-3 mt-4 bg-light">
+                <h5>Find tours and activities</h5>
+                <p class="mb-2">Where are you going?</p>
+                <form id="activity-search" class="d-flex gap-2">
+                    <input type="text" id="activity-destination" class="form-control" placeholder="City or destination" required>
+                    <button type="submit" class="btn btn-primary">Browse</button>
+                </form>
+                <p class="small text-muted mt-2 mb-0">Opens a partner site in a new tab. This is an affiliate link and we may earn a commission at no cost to you. See our <a href="/affiliate-disclosure">affiliate disclosure</a>.</p>
+            </div>
+            <script>
+                document.getElementById('activity-search').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    var dest = document.getElementById('activity-destination').value.trim();
+                    if (!dest) return;
+                    var url = <%- JSON.stringify(tpl) %>.replace('DESTINATION_TOKEN', encodeURIComponent(dest));
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                });
+            </script>
+        <% } %>
+
+        <div class="card p-3 mt-4 bg-light">
+            <h5>Plan the whole trip in one place</h5>
+            <p class="mb-2">Kosmos keeps your itinerary, bookings, expenses and packing list together.</p>
+            <a href="/auth/signup" class="btn btn-primary align-self-start">Create a free account</a>
+        </div>
+    </main>
+    <%- include("../partials/public_footer") %>
+</body>
+</html>

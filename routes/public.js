@@ -10,4 +10,6 @@ router.get('/contact', (req, res) => res.render('public/contact', { contactEmail
 router.get('/guides', (req, res) => res.render('public/guides'));
 router.get('/guides/packing-list', (req, res) => res.render('public/guide_packing', { updated: UPDATED }));
 
+router.get('/guides/choosing-activities', (req, res) => res.render('public/guide_activities', { updated: UPDATED }));
+
 module.exports = router;
