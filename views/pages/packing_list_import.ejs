@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Import Packing List - Kosmos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <%- include('../partials/navbar') %>
+
+    <div class="container mt-4" style="max-width: 700px;">
+        <h3>Import packing list</h3>
+        <p class="text-muted">
+            Paste a packing list from somewhere else - an AI assistant's suggestions, notes, whatever - and Claude
+            will split it into individual items so you can review and add them to
+            <strong><%= trip.trip_name %></strong>.
+        </p>
+
+        <form method="POST" action="/trips/<%= trip.trip_id %>/packing_list/import">
+            <textarea class="form-control mb-3" name="listText" rows="16"
+                placeholder="Clothing&#10;- 3 t-shirts&#10;- 2 pairs of pants&#10;- Rain jacket&#10;&#10;Electronics&#10;- Phone charger&#10;- Universal adapter&#10;..."
+                required></textarea>
+            <div class="d-flex gap-2 mb-5">
+                <button type="submit" class="btn btn-primary flex-grow-1">Extract Items</button>
+                <a href="/trips/<%= trip.trip_id %>/packing_list" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -51,4 +51,18 @@ async function insertSelectedExtras(tripId, body) {
     }
 }
 
-module.exports = { insertBookingFromFields, insertSelectedExtras };
+// Save whichever extracted packing-list items the user checked off.
+async function insertSelectedPackingItems(tripId, body) {
+    const items = Object.values(body.items || {});
+
+    for (const item of items) {
+        if (!item.include) continue;
+        if (!item.item_name || !item.item_name.trim()) continue;
+        await db.query(
+            "INSERT INTO packing_list (trip_id, item_name) VALUES (?, ?)",
+            [tripId, item.item_name.trim()]
+        );
+    }
+}
+
+module.exports = { insertBookingFromFields, insertSelectedExtras, insertSelectedPackingItems };

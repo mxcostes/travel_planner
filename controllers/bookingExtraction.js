@@ -212,4 +212,47 @@ async function extractItineraryFromPlanText(planText) {
     };
 }
 
-module.exports = { extractBookingFromPdf, extractBookingFromText, extractItineraryFromPlanText };
+// A pasted packing list (e.g. suggested by an AI assistant) is just a flat
+// list of items - no dates or categories to preserve.
+const PACKING_LIST_EXTRACTION_TOOL = {
+    name: 'extract_packing_list',
+    description: 'Extract individual packing list items from free-form text, such as a packing list suggested by an AI assistant or drafted in notes.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            items: {
+                type: 'array',
+                description: 'Every individual item to pack, one per entry. Items grouped together on one line or bullet (e.g. "chargers, adapter, headphones") are split into separate entries.',
+                items: {
+                    type: 'object',
+                    properties: {
+                        item_name: { type: 'string' }
+                    },
+                    required: ['item_name']
+                }
+            }
+        },
+        required: ['items']
+    }
+};
+
+async function extractPackingListFromText(listText) {
+    const response = await anthropic.messages.create({
+        model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5',
+        max_tokens: 2048,
+        tools: [PACKING_LIST_EXTRACTION_TOOL],
+        tool_choice: { type: 'tool', name: 'extract_packing_list' },
+        messages: [{
+            role: 'user',
+            content: `Extract every individual packing list item from this text as a flat list, one per item. Split out items grouped together on one line. Drop section headings and any non-item commentary.\n\n---\n\n${listText}`
+        }]
+    });
+
+    const toolUse = response.content.find((block) => block.type === 'tool_use');
+    if (!toolUse) {
+        throw new Error('Extraction did not return structured data');
+    }
+    return findArrayOfShape(toolUse.input, ['item_name']) || [];
+}
+
+module.exports = { extractBookingFromPdf, extractBookingFromText, extractItineraryFromPlanText, extractPackingListFromText };

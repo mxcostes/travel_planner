@@ -6,8 +6,8 @@ const uploadMemory = require('../config/multerMemory');
 const s3 = require('../config/r2');
 const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { extractBookingFromPdf, extractItineraryFromPlanText } = require('../controllers/bookingExtraction');
-const { insertBookingFromFields, insertSelectedExtras } = require('../controllers/bookingSave');
+const { extractBookingFromPdf, extractItineraryFromPlanText, extractPackingListFromText } = require('../controllers/bookingExtraction');
+const { insertBookingFromFields, insertSelectedExtras, insertSelectedPackingItems } = require('../controllers/bookingSave');
 const axios = require('axios');
 const checkTripAccess = require('../middleware/tripAccess'); // Import middleware
 require('dotenv').config();
@@ -350,6 +350,65 @@ router.patch('/:trip_id/packing_list/update/:item_id', async (req, res) => {
     } catch (err) {
         console.error("❌ DB Update Error:", err);
         res.status(500).json({ error: "DB Update Error" });
+    }
+});
+
+// Paste a free-form packing list (e.g. suggested by an AI assistant) and let
+// Claude split it into individual items for review before anything is saved.
+router.get('/:trip_id/packing_list/import', async (req, res) => {
+    const { trip_id } = req.params;
+
+    try {
+        const [tripResult] = await db.query("SELECT * FROM trips WHERE trip_id = ?", [trip_id]);
+        if (tripResult.length === 0) {
+            return res.status(404).send("Trip not found.");
+        }
+        res.render('pages/packing_list_import', { trip: tripResult[0] });
+    } catch (err) {
+        console.error("❌ Failed to load packing list import page:", err);
+        res.status(500).send("❌ Failed to load page.");
+    }
+});
+
+router.post('/:trip_id/packing_list/import', async (req, res) => {
+    const { trip_id } = req.params;
+    const listText = (req.body.listText || '').trim();
+
+    if (!listText) {
+        return res.status(400).send("Paste a packing list first.");
+    }
+
+    try {
+        const [tripResult] = await db.query("SELECT * FROM trips WHERE trip_id = ?", [trip_id]);
+        if (tripResult.length === 0) {
+            return res.status(404).send("Trip not found.");
+        }
+
+        const items = await extractPackingListFromText(listText);
+
+        if (items.length === 0) {
+            return res.status(422).send("❌ Couldn't find any items in that text. Try pasting the full list.");
+        }
+
+        res.render('pages/packing_list_import_review', {
+            trip: tripResult[0],
+            items
+        });
+    } catch (err) {
+        console.error("❌ Failed to extract packing list:", err);
+        res.status(500).send("❌ Failed to read that list. Try again.");
+    }
+});
+
+router.post('/:trip_id/packing_list/import/confirm', async (req, res) => {
+    const { trip_id } = req.params;
+
+    try {
+        await insertSelectedPackingItems(trip_id, req.body);
+        res.redirect(`/trips/${trip_id}/packing_list`);
+    } catch (err) {
+        console.error("❌ Failed to import packing list:", err);
+        res.status(500).send("❌ Failed to save the selected items.");
     }
 });
 

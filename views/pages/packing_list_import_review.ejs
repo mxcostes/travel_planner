@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Review Imported Packing List - Kosmos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <%- include('../partials/navbar') %>
+
+    <div class="container mt-4" style="max-width: 700px;">
+        <h3>Review before adding</h3>
+        <p class="text-muted">
+            Here's what Claude found in that text. Check anything you'd like to add to
+            <strong><%= trip.trip_name %></strong>'s packing list, edit as needed, then save. Anything left
+            unchecked is discarded - it's not saved anywhere else.
+        </p>
+
+        <form action="/trips/<%= trip.trip_id %>/packing_list/import/confirm" method="POST">
+            <% items.forEach(function(item, i) { %>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <input class="form-check-input flex-shrink-0" type="checkbox" name="items[<%= i %>][include]" id="item-include-<%= i %>" checked>
+                    <input type="text" class="form-control form-control-sm" name="items[<%= i %>][item_name]" value="<%= item.item_name || '' %>">
+                </div>
+            <% }); %>
+
+            <div class="d-flex gap-2 mt-3 mb-5">
+                <button type="submit" class="btn btn-primary flex-grow-1">Save Selected</button>
+                <a href="/trips/<%= trip.trip_id %>/packing_list" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
