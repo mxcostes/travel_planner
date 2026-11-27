@@ -76,19 +76,38 @@
                                     <option value="viewer">Viewer</option>
                                     <option value="editor">Editor</option>
                                 </select>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="hide_expenses" id="share-hide-expenses">
+                                    <label class="form-check-label" for="share-hide-expenses">Hide expenses from this person</label>
+                                </div>
                                 <button type="submit" class="btn btn-primary w-100">Share Trip</button>
                             </form>
                         </div>
                         <h5>Shared Users</h5>
                         <ul class="list-group">
                             <% sharedUsers.forEach(user=> { %>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <%= user.email %> (<%= user.role %>)
-                                            <form method="POST" action="/trips/<%= trip.trip_id %>/share/remove"
-                                                style="display:inline;">
-                                                <input type="hidden" name="user_id" value="<%= user.user_id %>">
-                                                <button class="btn btn-danger btn-sm">Remove</button>
-                                            </form>
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><%= user.email %> (<%= user.role %><%= user.hide_expenses ? ', expenses hidden' : '' %>)</span>
+                                        <form method="POST" action="/trips/<%= trip.trip_id %>/share/remove" style="display:inline;">
+                                            <input type="hidden" name="user_id" value="<%= user.user_id %>">
+                                            <button class="btn btn-danger btn-sm">Remove</button>
+                                        </form>
+                                    </div>
+                                    <% if (user.role !== 'owner') { %>
+                                        <form method="POST" action="/trips/<%= trip.trip_id %>/share/update" class="d-flex align-items-center gap-2 mt-2">
+                                            <input type="hidden" name="user_id" value="<%= user.user_id %>">
+                                            <select class="form-select form-select-sm" name="role" style="width:auto;">
+                                                <option value="viewer" <%= user.role === 'viewer' ? 'selected' : '' %>>Viewer</option>
+                                                <option value="editor" <%= user.role === 'editor' ? 'selected' : '' %>>Editor</option>
+                                            </select>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="hide_expenses" id="hide-expenses-<%= user.user_id %>" <%= user.hide_expenses ? 'checked' : '' %>>
+                                                <label class="form-check-label small" for="hide-expenses-<%= user.user_id %>">Hide expenses</label>
+                                            </div>
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Update</button>
+                                        </form>
+                                    <% } %>
                                 </li>
                                 <% }) %>
                         </ul>

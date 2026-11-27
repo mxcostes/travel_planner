@@ -163,6 +163,7 @@ CREATE TABLE `trip_users` (
   `trip_id` int NOT NULL,
   `user_id` int NOT NULL,
   `role` enum('owner','editor','viewer') NOT NULL DEFAULT 'viewer',
+  `hide_expenses` tinyint(1) NOT NULL DEFAULT '0',
   `added_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`trip_user_id`),
   KEY `trip_id` (`trip_id`),

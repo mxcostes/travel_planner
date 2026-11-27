@@ -10,7 +10,9 @@
                 <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="trip_add">Add Trip</a></li>
                 <li class="nav-item"><a class="nav-link active" href="/trips/<%= trip.trip_id %>/">Trip Dashbaord</a></li>
-                <li class="nav-item"><a class="nav-link active" href="/trips/<%= trip.trip_id %>/budget">Expenses</a></li>
+                <% if (typeof hideExpenses === 'undefined' || !hideExpenses) { %>
+                    <li class="nav-item"><a class="nav-link active" href="/trips/<%= trip.trip_id %>/budget">Expenses</a></li>
+                <% } %>
                 <li class="nav-item"><a class="nav-link active" href="/trips/<%= trip.trip_id %>/itinerary">Itinerary</a></li>
                 <li class="nav-item"><a class="nav-link active" href="/trips/<%= trip.trip_id %>/packing_list">Packing List</a></li>
                 <li class="nav-item"><a class="nav-link active" href="/trips/<%= trip.trip_id %>/bookings">Bookings</a></li>

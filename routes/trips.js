@@ -9,8 +9,29 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { extractBookingFromPdf, extractItineraryFromPlanText, extractPackingListFromText } = require('../controllers/bookingExtraction');
 const { insertBookingFromFields, insertSelectedExtras, insertSelectedPackingItems } = require('../controllers/bookingSave');
 const axios = require('axios');
-const checkTripAccess = require('../middleware/tripAccess'); // Import middleware
+const { checkTripAccess, checkExpensesAccess } = require('../middleware/tripAccess'); // Import middleware
 require('dotenv').config();
+
+// Makes `hideExpenses` available to every trip-scoped view (e.g. the navbar,
+// to hide the Expenses link) without every route having to look it up and
+// pass it through individually.
+router.use('/:trip_id', async (req, res, next) => {
+    const userId = req.session.user?.id;
+    if (!userId || !/^\d+$/.test(req.params.trip_id)) {
+        return next();
+    }
+
+    try {
+        const [[access]] = await db.query(
+            "SELECT role, hide_expenses FROM trip_users WHERE trip_id = ? AND user_id = ?",
+            [req.params.trip_id, userId]
+        );
+        res.locals.hideExpenses = !!(access && access.role !== 'owner' && access.hide_expenses);
+    } catch (err) {
+        res.locals.hideExpenses = false;
+    }
+    next();
+});
 
 // Example route to verify it's working
 router.get('/', (req, res) => {
@@ -114,10 +135,10 @@ router.post('/:trip_id/edit', checkTripAccess("editor"), async (req, res) => {
 // Share Trip
 router.post('/:trip_id/share', checkTripAccess("owner"), async (req, res) => {
     const { trip_id } = req.params;
-    const { user_email, role } = req.body;
+    const { user_email, role, hide_expenses } = req.body;
 
     const getUserSql = "SELECT user_id FROM users WHERE email = ?";
-    const insertShareSql = "INSERT INTO trip_users (trip_id, user_id, role) VALUES (?, ?, ?)";
+    const insertShareSql = "INSERT INTO trip_users (trip_id, user_id, role, hide_expenses) VALUES (?, ?, ?, ?)";
 
     try {
         const [userResult] = await db.query(getUserSql, [user_email]);
@@ -126,7 +147,7 @@ router.post('/:trip_id/share', checkTripAccess("owner"), async (req, res) => {
         }
         const user_id = userResult[0].user_id;
 
-        await db.query(insertShareSql, [trip_id, user_id, role]);
+        await db.query(insertShareSql, [trip_id, user_id, role, hide_expenses ? 1 : 0]);
         res.redirect(`/trips/${trip_id}`);
     } catch (err) {
         console.error("❌ Failed to share trip:", err);
@@ -137,13 +158,13 @@ router.post('/:trip_id/share', checkTripAccess("owner"), async (req, res) => {
 //update user permissions
 router.post('/:trip_id/share/update', checkTripAccess("owner"), async (req, res) => {
     const { trip_id } = req.params;
-    const { user_id, role } = req.body;
+    const { user_id, role, hide_expenses } = req.body;
 
-    const updateRoleSql = "UPDATE trip_users SET role = ? WHERE trip_id = ? AND user_id = ?";
+    const updateRoleSql = "UPDATE trip_users SET role = ?, hide_expenses = ? WHERE trip_id = ? AND user_id = ?";
 
     try {
-        await db.query(updateRoleSql, [role, trip_id, user_id]);
-        res.redirect(`/trips/${trip_id}/manage-sharing`);
+        await db.query(updateRoleSql, [role, hide_expenses ? 1 : 0, trip_id, user_id]);
+        res.redirect(`/trips/${trip_id}`);
     } catch (err) {
         console.error("❌ Failed to update role:", err);
         res.status(500).send("Failed to update role.");
@@ -159,7 +180,7 @@ router.post('/:trip_id/share/remove', checkTripAccess("owner"), async (req, res)
 
     try {
         await db.query(deleteUserSql, [trip_id, user_id]);
-        res.redirect(`/trips/${trip_id}/manage-sharing`);
+        res.redirect(`/trips/${trip_id}`);
     } catch (err) {
         console.error("❌ Failed to remove user:", err);
         res.status(500).send("Failed to remove user.");
@@ -182,7 +203,7 @@ router.post('/:trip_id/delete', checkTripAccess("owner"), async (req, res) => {
 });
 
 //Render budget page
-router.get('/:trip_id/budget', checkTripAccess("viewer"), async (req, res) => {
+router.get('/:trip_id/budget', checkExpensesAccess(), async (req, res) => {
     const { trip_id } = req.params;
 
     const sqlTrip = "SELECT * FROM trips WHERE trip_id = ?";
@@ -232,7 +253,7 @@ router.get('/:trip_id/budget', checkTripAccess("viewer"), async (req, res) => {
 
 
 // ✍️ Route to Add a New Expense
-router.post('/:trip_id/budget/add', async (req, res) => {
+router.post('/:trip_id/budget/add', checkExpensesAccess(), async (req, res) => {
     const { trip_id } = req.params;
     const { category, amount, description, expense_date } = req.body;
 
@@ -255,7 +276,7 @@ router.post('/:trip_id/budget/add', async (req, res) => {
     }
 });
 
-router.post('/:trip_id/budget/delete/:expense_id', async (req, res) => {
+router.post('/:trip_id/budget/delete/:expense_id', checkExpensesAccess(), async (req, res) => {
     const { trip_id, expense_id } = req.params;
 
     const sql = "DELETE FROM expenses WHERE expense_id = ? AND trip_id = ?";
@@ -269,7 +290,7 @@ router.post('/:trip_id/budget/delete/:expense_id', async (req, res) => {
     }
 });
 
-router.post('/:trip_id/budget/update/:expense_id', async (req, res) => {
+router.post('/:trip_id/budget/update/:expense_id', checkExpensesAccess(), async (req, res) => {
     const { trip_id, expense_id } = req.params;
     const { category, description, amount, expense_date } = req.body;
 
@@ -1123,7 +1144,7 @@ router.get('/:trip_id', async (req, res) => {
 
     const tripSql = "SELECT * FROM trips WHERE trip_id = ?";
     const sharedUsersSql = `
-        SELECT distinct users.user_id, users.email, trip_users.role
+        SELECT distinct users.user_id, users.email, trip_users.role, trip_users.hide_expenses
         FROM trip_users
         JOIN users ON trip_users.user_id = users.user_id
         WHERE trip_users.trip_id = ?
