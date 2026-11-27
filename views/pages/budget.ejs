@@ -6,6 +6,7 @@
     <title>Budget - Kosmos</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 </head>
 <body>
 
@@ -41,7 +42,11 @@
 
         <!-- Expenses Table -->
         <div class="col-md-6">
-            <h4 class="text-center">Expenses</h4>
+            <h4 class="text-center">Expenses
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#expensesHelpModal" title="How do expenses work?">
+                    <i class="bi bi-question-circle"></i>
+                </button>
+            </h4>
             <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
@@ -124,5 +129,33 @@
     }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Help Modal -->
+<div class="modal fade" id="expensesHelpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tracking expenses</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Add Expense</h6>
+                <p>Pick a category, add a description and amount, and a date. It lands straight in the table and
+                    the breakdown below.</p>
+                <h6>Expenses table</h6>
+                <p>Edit (✏️) or delete (🗑️) any entry. Each row's amount counts toward the totals on the right.</p>
+                <h6>Spending Breakdown</h6>
+                <p>Switch between totals by category and totals by date to see where the budget is going.</p>
+                <h6>Email Import</h6>
+                <p class="mb-0">Forwarding a booking confirmation to your personal Kosmos address (under "Email
+                    Import" in the menu) can also pull out cost line-items from that document, which you can review
+                    and add here - no manual entry needed.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Got it</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
